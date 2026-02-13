@@ -141,6 +141,11 @@ export async function getObjectTypes(): Promise<ObjectType[]> {
   return data as ObjectType[];
 }
 
+export async function getArtistMovements(artistId: string): Promise<string[]> {
+  const { data } = await getSupabase().from('artist_movements').select('movement_id').eq('artist_id', artistId);
+  return data?.map(r => r.movement_id) || [];
+}
+
 export async function getMovementArtists(movementId: string): Promise<string[]> {
   const { data } = await getSupabase().from('artist_movements').select('artist_id').eq('movement_id', movementId);
   return data?.map(r => r.artist_id) || [];
