@@ -1,0 +1,87 @@
+---
+import Base from '../../layouts/Base.astro';
+import { getInstitutions, getInstitutionBySlug } from '../../lib/supabase';
+
+export async function getStaticPaths() {
+  const institutions = await getInstitutions();
+  return institutions.map(i => ({ params: { slug: i.slug } }));
+}
+
+const { slug } = Astro.params;
+const inst = await getInstitutionBySlug(slug!);
+if (!inst) return Astro.redirect('/institutions');
+
+const typeLabel = inst.type === 'MUSEUM' ? 'Museum' : inst.type === 'GALLERY' ? 'Gallery' : inst.type === 'CULTURAL_CENTER' ? 'Cultural Centre' : inst.type === 'RESIDENCY' ? 'Residency' : inst.type === 'FOUNDATION' ? 'Foundation' : inst.type || 'Institution';
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Museum",
+  "name": inst.name,
+  ...(inst.description && { "description": inst.description }),
+  ...(inst.address && { "address": inst.address }),
+  ...(inst.website && { "url": inst.website }),
+  ...(inst.phone && { "telephone": inst.phone }),
+  ...(inst.latitude && inst.longitude && {
+    "geo": { "@type": "GeoCoordinates", "latitude": inst.latitude, "longitude": inst.longitude }
+  })
+};
+---
+
+<Base title={`${inst.name} — Morocco Art Guide`} description={inst.description || `${inst.name} — ${typeLabel} in Morocco`}>
+  <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+
+  <article class="section-inner">
+    <header class="page-header" style="text-align: left;">
+      <span class="micro-label">{typeLabel}</span>
+      <h1>{inst.name}</h1>
+      {inst.name_ar && <p class="name-ar">{inst.name_ar}</p>}
+    </header>
+
+    <div class="inst-body">
+      <div class="inst-content">
+        {inst.description_long ? (
+          <div class="inst-desc" set:html={inst.description_long.replace(/\n/g, '<br><br>')} />
+        ) : inst.description ? (
+          <p class="inst-desc">{inst.description}</p>
+        ) : null}
+
+        {inst.highlights && (
+          <div class="inst-highlights">
+            <h3>Highlights</h3>
+            <p>{inst.highlights}</p>
+          </div>
+        )}
+      </div>
+
+      <aside class="inst-sidebar">
+        <dl>
+          {inst.address && <><dt>Address</dt><dd>{inst.address}</dd></>}
+          {inst.hours && <><dt>Hours</dt><dd>{inst.hours}</dd></>}
+          {inst.admission && <><dt>Admission</dt><dd>{inst.admission}</dd></>}
+          {inst.phone && <><dt>Phone</dt><dd><a href={`tel:${inst.phone}`}>{inst.phone}</a></dd></>}
+          {inst.email && <><dt>Email</dt><dd><a href={`mailto:${inst.email}`}>{inst.email}</a></dd></>}
+          {inst.website && <><dt>Website</dt><dd><a href={inst.website} target="_blank" rel="noopener">{inst.website.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '')}</a></dd></>}
+          {inst.year_established && <><dt>Established</dt><dd>{inst.year_established}</dd></>}
+        </dl>
+      </aside>
+    </div>
+  </article>
+</Base>
+
+<style>
+  .name-ar { font-size: 1.3rem; color: var(--color-ink-muted); direction: rtl; }
+  .inst-body { display: grid; grid-template-columns: 1fr 280px; gap: var(--space-xl); margin-top: var(--space-md); }
+  .inst-desc { font-size: 1.05rem; line-height: 1.7; color: var(--color-ink-light); }
+  .inst-highlights { margin-top: var(--space-md); }
+  .inst-highlights h3 { font-size: 1rem; margin-bottom: 0.5rem; }
+  .inst-highlights p { font-size: 0.95rem; color: var(--color-ink-light); line-height: 1.6; }
+  .inst-sidebar {
+    background: var(--color-surface); padding: var(--space-md);
+    border: 1px solid var(--color-border); align-self: start;
+  }
+  .inst-sidebar dl { display: grid; grid-template-columns: 1fr; gap: 0.8rem; }
+  .inst-sidebar dt { font-size: 0.68rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-ink-muted); }
+  .inst-sidebar dd { font-size: 0.88rem; color: var(--color-ink-light); margin-top: -0.4rem; }
+  .inst-sidebar a { color: var(--color-accent); }
+  @media (max-width: 768px) { .inst-body { grid-template-columns: 1fr; } }
+</style>

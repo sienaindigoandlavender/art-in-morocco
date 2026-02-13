@@ -1,0 +1,108 @@
+---
+import Base from '../../layouts/Base.astro';
+import { getArtists, getArtistBySlug, getArtworksByArtist, getMovements, getArtistMovements } from '../../lib/supabase';
+
+export async function getStaticPaths() {
+  const artists = await getArtists();
+  return artists.map(a => ({ params: { slug: a.slug } }));
+}
+
+const { slug } = Astro.params;
+const artist = await getArtistBySlug(slug!);
+if (!artist) return Astro.redirect('/artists');
+
+const artworks = await getArtworksByArtist(artist.id);
+const movementIds = await getArtistMovements(artist.id);
+const allMovements = await getMovements();
+const movements = allMovements.filter(m => movementIds.includes(m.id));
+
+const lifespan = [
+  artist.birth_year,
+  artist.death_year ? `–${artist.death_year}` : '–present'
+].filter(Boolean).join('');
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Person",
+  "name": artist.name,
+  "birthDate": artist.birth_year?.toString(),
+  ...(artist.death_year && { "deathDate": artist.death_year.toString() }),
+  "description": artist.biography_short,
+  ...(artist.website_url && { "url": artist.website_url }),
+  "nationality": { "@type": "Country", "name": "Morocco" }
+};
+---
+
+<Base title={`${artist.name} — Morocco Art Guide`} description={artist.biography_short || `${artist.name}, Moroccan artist (${lifespan})`}>
+  <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+
+  <article class="section-inner artist-detail">
+    <header class="artist-header">
+      <span class="micro-label">{lifespan}</span>
+      <h1>{artist.name}</h1>
+      {artist.name_ar && <p class="name-ar">{artist.name_ar}</p>}
+      {movements.length > 0 && (
+        <div class="artist-movements">
+          {movements.map(m => (
+            <a href={`/movements/${m.slug}`} class="movement-tag">{m.name}</a>
+          ))}
+        </div>
+      )}
+    </header>
+
+    {artist.photo_url && (
+      <div class="artist-portrait">
+        <img src={artist.photo_url} alt={artist.name} />
+      </div>
+    )}
+
+    <div class="artist-bio">
+      {artist.biography && <div class="bio-text" set:html={artist.biography.replace(/\n/g, '<br><br>')} />}
+      {artist.website_url && (
+        <p class="artist-link"><a href={artist.website_url} target="_blank" rel="noopener">Website →</a></p>
+      )}
+    </div>
+
+    {artworks.length > 0 && (
+      <section class="artist-works">
+        <div class="section-header">
+          <span class="micro-label">Selected Works</span>
+          <h2>Works by {artist.name}</h2>
+        </div>
+        <div class="card-grid">
+          {artworks.map(w => (
+            <a href={`/artworks/${w.slug}`} class="card">
+              <div class="card-image">
+                {w.image_url && <img src={w.image_url} alt={w.title} loading="lazy" />}
+              </div>
+              <div class="card-body">
+                <span class="micro-label">{w.year}{w.year_end ? `–${w.year_end}` : ''}</span>
+                <h3>{w.title}</h3>
+                {w.materials && <p class="card-meta">{w.materials}</p>}
+              </div>
+            </a>
+          ))}
+        </div>
+      </section>
+    )}
+  </article>
+</Base>
+
+<style>
+  .artist-header { padding: var(--space-xl) 0 var(--space-md); }
+  .name-ar { font-size: 1.5rem; color: var(--color-ink-muted); direction: rtl; margin-top: 0.3rem; }
+  .artist-movements { display: flex; gap: 0.5rem; margin-top: var(--space-sm); flex-wrap: wrap; }
+  .movement-tag {
+    font-size: 0.75rem; font-weight: 500; letter-spacing: 0.04em;
+    padding: 0.3rem 0.8rem; border: 1px solid var(--color-border);
+    transition: border-color 0.2s, background 0.2s;
+  }
+  .movement-tag:hover { border-color: var(--color-accent); background: var(--color-surface); }
+  .artist-portrait { max-width: 600px; margin-bottom: var(--space-md); }
+  .artist-portrait img { width: 100%; }
+  .artist-bio { max-width: var(--max-width-narrow); }
+  .bio-text { font-size: 1.05rem; line-height: 1.7; color: var(--color-ink-light); }
+  .artist-link { margin-top: var(--space-sm); }
+  .artist-link a { color: var(--color-accent); font-weight: 500; border-bottom: 1px solid var(--color-accent); }
+  .artist-works { margin-top: var(--space-xl); }
+</style>

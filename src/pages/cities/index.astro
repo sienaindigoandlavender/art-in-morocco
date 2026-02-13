@@ -1,0 +1,46 @@
+---
+import Base from '../../layouts/Base.astro';
+import { getCities, getInstitutions } from '../../lib/supabase';
+const cities = await getCities();
+const institutions = await getInstitutions();
+
+// Count institutions per city
+const instByCityId = new Map<string, number>();
+institutions.forEach(i => {
+  if (i.city_id) instByCityId.set(i.city_id, (instByCityId.get(i.city_id) || 0) + 1);
+});
+---
+
+<Base title="Art Cities in Morocco — Morocco Art Guide" description="Explore Moroccan art by city — Casablanca, Marrakech, Rabat, Fes, Tangier and beyond.">
+  <div class="section-inner">
+    <div class="page-header">
+      <span class="micro-label">Geography</span>
+      <h1>Art by City</h1>
+      <p class="page-desc">{cities.length} cities with active art scenes.</p>
+    </div>
+
+    <div class="cities-grid">
+      {cities.map(city => {
+        const count = instByCityId.get(city.id) || instByCityId.get(`city-${city.slug}`) || 0;
+        return (
+          <a href={`/cities/${city.slug}`} class="city-card">
+            <h2>{city.name}</h2>
+            {city.name_ar && <span class="city-ar">{city.name_ar}</span>}
+            {city.description && <p>{city.description}</p>}
+            {count > 0 && <span class="city-count">{count} art spaces</span>}
+          </a>
+        );
+      })}
+    </div>
+  </div>
+</Base>
+
+<style>
+  .cities-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1px; background: var(--color-border); border: 1px solid var(--color-border); }
+  .city-card { background: white; padding: var(--space-md); transition: background 0.3s; }
+  .city-card:hover { background: var(--color-surface); }
+  .city-card h2 { font-size: 1.4rem; margin-bottom: 0.2rem; }
+  .city-ar { font-size: 1rem; color: var(--color-ink-muted); direction: rtl; display: block; margin-bottom: 0.5rem; }
+  .city-card p { font-size: 0.85rem; color: var(--color-ink-light); line-height: 1.5; }
+  .city-count { display: block; margin-top: 0.5rem; font-size: 0.75rem; font-weight: 600; color: var(--color-accent); letter-spacing: 0.05em; }
+</style>

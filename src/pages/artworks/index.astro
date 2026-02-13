@@ -1,0 +1,40 @@
+---
+import Base from '../../layouts/Base.astro';
+import { getArtworks, getArtists } from '../../lib/supabase';
+const artworks = await getArtworks();
+const artists = await getArtists();
+const artistMap = new Map(artists.map(a => [a.id, a]));
+---
+
+<Base title="Moroccan Artworks — Morocco Art Guide" description={`${artworks.length} significant works by Moroccan artists — painting, sculpture, photography, installation.`}>
+  <div class="section-inner">
+    <div class="page-header">
+      <span class="micro-label">Works</span>
+      <h1>Artworks</h1>
+      <p class="page-desc">{artworks.length} works spanning a century of Moroccan art.</p>
+    </div>
+
+    <div class="card-grid">
+      {artworks.map(w => {
+        const artist = w.artist_id ? artistMap.get(w.artist_id) : null;
+        return (
+          <a href={`/artworks/${w.slug}`} class="card">
+            <div class="card-image">
+              {w.image_url && <img src={w.image_url} alt={w.title} loading="lazy" />}
+            </div>
+            <div class="card-body">
+              <span class="micro-label">{w.year}{w.year_end ? `–${w.year_end}` : ''}</span>
+              <h3>{w.title}</h3>
+              {artist && <p class="card-meta">{artist.name}</p>}
+              {w.materials && <p class="card-materials">{w.materials}</p>}
+            </div>
+          </a>
+        );
+      })}
+    </div>
+  </div>
+</Base>
+
+<style>
+  .card-materials { font-size: 0.78rem; color: var(--color-ink-muted); margin-top: 0.2rem; }
+</style>

@@ -1,0 +1,57 @@
+---
+import Base from '../../layouts/Base.astro';
+import { getInstitutions } from '../../lib/supabase';
+const institutions = await getInstitutions();
+
+const types = [...new Set(institutions.map(i => i.type).filter(Boolean))];
+const byType = (type: string) => institutions.filter(i => i.type === type);
+---
+
+<Base title="Art Spaces in Morocco — Museums, Galleries & Residencies" description={`${institutions.length} art institutions across Morocco — museums, galleries, cultural centres, and artist residencies.`}>
+  <div class="section-inner">
+    <div class="page-header">
+      <span class="micro-label">Spaces</span>
+      <h1>Where to See Art in Morocco</h1>
+      <p class="page-desc">{institutions.length} museums, galleries, cultural centres, and artist residencies.</p>
+    </div>
+
+    {types.map(type => (
+      <section class="type-section">
+        <h2 class="type-heading">{type === 'MUSEUM' ? 'Museums' : type === 'GALLERY' ? 'Galleries' : type === 'CULTURAL_CENTER' ? 'Cultural Centres' : type === 'RESIDENCY' ? 'Residencies' : type === 'FOUNDATION' ? 'Foundations' : type === 'ARTS_CENTER' ? 'Arts Centres' : type}</h2>
+        <div class="inst-list">
+          {byType(type!).map(inst => (
+            <a href={`/institutions/${inst.slug}`} class="inst-row">
+              <div class="inst-main">
+                <h3>{inst.name}</h3>
+                {inst.description && <p>{inst.description.slice(0, 150)}{inst.description.length > 150 ? '…' : ''}</p>}
+              </div>
+              <div class="inst-meta">
+                {inst.year_established && <span>Est. {inst.year_established}</span>}
+              </div>
+            </a>
+          ))}
+        </div>
+      </section>
+    ))}
+  </div>
+</Base>
+
+<style>
+  .type-section { margin-bottom: var(--space-xl); }
+  .type-heading {
+    font-size: 0.75rem; font-family: var(--font-body); font-weight: 600;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--color-accent); margin-bottom: var(--space-sm);
+    padding-bottom: 0.5rem; border-bottom: 1px solid var(--color-border);
+  }
+  .inst-list { display: flex; flex-direction: column; }
+  .inst-row {
+    display: flex; justify-content: space-between; align-items: start;
+    padding: var(--space-sm) 0; border-bottom: 1px solid var(--color-border);
+    transition: background 0.2s; gap: var(--space-md);
+  }
+  .inst-row:hover { background: var(--color-surface); padding-left: var(--space-xs); padding-right: var(--space-xs); }
+  .inst-main h3 { font-size: 1.05rem; margin-bottom: 0.2rem; }
+  .inst-main p { font-size: 0.85rem; color: var(--color-ink-light); line-height: 1.4; }
+  .inst-meta { font-size: 0.78rem; color: var(--color-ink-muted); white-space: nowrap; flex-shrink: 0; }
+</style>

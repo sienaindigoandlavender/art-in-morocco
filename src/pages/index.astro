@@ -1,0 +1,326 @@
+---
+import Base from '../layouts/Base.astro';
+import { getArtists, getArtworks, getMovements, getInstitutions, getCities, getSiteSettings } from '../lib/supabase';
+
+const settings = await getSiteSettings();
+const artists = await getArtists();
+const artworks = await getArtworks();
+const movements = await getMovements();
+const institutions = await getInstitutions();
+const cities = await getCities();
+
+const museums = institutions.filter(i => i.type === 'MUSEUM');
+const galleries = institutions.filter(i => i.type === 'GALLERY');
+
+const faqSchema = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Who are the most important Moroccan artists?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": `Morocco Art Guide documents ${artists.length} significant Moroccan artists including Farid Belkahia, Mohamed Melehi, Chaïbia Talal, Hassan Hajjaj, and Lalla Essaydi — spanning from the pioneers of the Casablanca School to contemporary art stars.`
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What is the Casablanca School?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "The Casablanca School (1962–1974) was a pioneering art movement led by Farid Belkahia, Mohamed Melehi, and Mohamed Chabâa at the École des Beaux-Arts in Casablanca. They rejected European academic painting and Orientalism, seeking an authentically Moroccan modernism rooted in Amazigh symbols, Arabic calligraphy, and local materials like leather and copper."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Where can I see art in Morocco?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": `Morocco has ${institutions.length} significant art institutions including ${museums.length} museums and ${galleries.length} galleries. Key venues include MACAAL and the Musée Yves Saint Laurent in Marrakech, the Mohammed VI Museum of Modern and Contemporary Art in Rabat, and the Villa des Arts in Casablanca.`
+      }
+    }
+  ]
+};
+---
+
+<Base title="Morocco Art Guide — Moroccan Artists, Galleries & Movements" settings={settings}>
+  <script type="application/ld+json" set:html={JSON.stringify(faqSchema)} />
+
+  <!-- Hero -->
+  <section class="hero" slot="hero">
+    <div class="container hero-content">
+      <span class="micro-label">A Living Archive</span>
+      <h1>Morocco<br>Art Guide</h1>
+      <p class="hero-subtitle">
+        {artists.length} artists. {movements.length} movements. {institutions.length} places to see art.<br>
+        From the Casablanca School to the galleries of tomorrow.
+      </p>
+      <div class="hero-stats">
+        <div class="stat"><span class="stat-num">{artists.length}</span><span class="stat-label">Artists</span></div>
+        <div class="stat"><span class="stat-num">{artworks.length}</span><span class="stat-label">Works</span></div>
+        <div class="stat"><span class="stat-num">{institutions.length}</span><span class="stat-label">Spaces</span></div>
+        <div class="stat"><span class="stat-num">{cities.length}</span><span class="stat-label">Cities</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Movements -->
+  <section class="section-inner">
+    <div class="section-header">
+      <span class="micro-label">Movements</span>
+      <h2>The Arc of Moroccan Art</h2>
+    </div>
+    <div class="movements-row">
+      {movements.map(m => (
+        <a href={`/movements/${m.slug}`} class="movement-card">
+          <span class="movement-dates">
+            {m.period_start}{m.period_end ? `–${m.period_end}` : '–present'}
+          </span>
+          <h3>{m.name}</h3>
+          {m.name_ar && <span class="movement-ar">{m.name_ar}</span>}
+          <p>{m.description?.slice(0, 120)}{m.description && m.description.length > 120 ? '…' : ''}</p>
+        </a>
+      ))}
+    </div>
+  </section>
+
+  <!-- Featured Artists -->
+  <section class="section-inner">
+    <div class="section-header">
+      <span class="micro-label">Artists</span>
+      <h2>Voices That Shaped a Nation</h2>
+    </div>
+    <div class="card-grid">
+      {artists.slice(0, 8).map(artist => (
+        <a href={`/artists/${artist.slug}`} class="card">
+          <div class="card-image">
+            {artist.photo_url && <img src={artist.photo_url} alt={artist.name} loading="lazy" />}
+          </div>
+          <div class="card-body">
+            <span class="micro-label">
+              {artist.birth_year}{artist.death_year ? `–${artist.death_year}` : '–present'}
+            </span>
+            <h3>{artist.name}</h3>
+            {artist.name_ar && <span class="card-meta">{artist.name_ar}</span>}
+          </div>
+        </a>
+      ))}
+    </div>
+    <div style="text-align: center;">
+      <a href="/artists" class="cta-link">All {artists.length} artists →</a>
+    </div>
+  </section>
+
+  <!-- Institutions -->
+  <section class="institutions-section">
+    <div class="section-inner">
+      <div class="section-header">
+        <span class="micro-label">Where to See Art</span>
+        <h2>Spaces</h2>
+      </div>
+      <div class="inst-grid">
+        {institutions.filter(i => i.description).slice(0, 6).map(inst => (
+          <a href={`/institutions/${inst.slug}`} class="inst-card">
+            <div class="inst-type">{inst.type}</div>
+            <h3>{inst.name}</h3>
+            <p>{inst.description?.slice(0, 100)}…</p>
+            {inst.year_established && <span class="inst-year">Est. {inst.year_established}</span>}
+          </a>
+        ))}
+      </div>
+      <div style="text-align: center;">
+        <a href="/institutions" class="cta-link">All {institutions.length} spaces →</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Cities -->
+  <section class="section-inner">
+    <div class="section-header">
+      <span class="micro-label">Geography</span>
+      <h2>Art by City</h2>
+    </div>
+    <div class="cities-row">
+      {cities.map(city => (
+        <a href={`/cities/${city.slug}`} class="city-chip">
+          <span class="city-name">{city.name}</span>
+          {city.name_ar && <span class="city-ar">{city.name_ar}</span>}
+        </a>
+      ))}
+    </div>
+  </section>
+</Base>
+
+<style>
+  .hero {
+    padding: var(--space-2xl) 0 var(--space-xl);
+    background: var(--color-dark-bg);
+    color: var(--color-dark-text);
+  }
+
+  .hero-content { max-width: 720px; }
+
+  .hero .micro-label { color: var(--color-accent); }
+
+  .hero h1 {
+    margin-top: var(--space-xs);
+    font-size: clamp(3rem, 7vw, 5rem);
+    line-height: 1.0;
+    color: white;
+  }
+
+  .hero-subtitle {
+    margin-top: var(--space-md);
+    font-size: 1.1rem;
+    color: var(--color-dark-muted);
+    line-height: 1.6;
+  }
+
+  .hero-stats {
+    display: flex;
+    gap: var(--space-lg);
+    margin-top: var(--space-lg);
+    padding-top: var(--space-md);
+    border-top: 1px solid rgba(255,255,255,0.1);
+  }
+
+  .stat-num {
+    display: block;
+    font-family: var(--font-display);
+    font-size: 2rem;
+    color: white;
+  }
+
+  .stat-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--color-dark-muted);
+  }
+
+  /* Movements */
+  .movements-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1px;
+    background: var(--color-border);
+    border: 1px solid var(--color-border);
+  }
+
+  .movement-card {
+    background: white;
+    padding: var(--space-md);
+    transition: background 0.3s;
+  }
+
+  .movement-card:hover { background: var(--color-surface); }
+
+  .movement-dates {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    color: var(--color-accent);
+  }
+
+  .movement-card h3 {
+    margin: 0.3rem 0;
+    font-size: 1.15rem;
+  }
+
+  .movement-ar {
+    display: block;
+    font-size: 0.9rem;
+    color: var(--color-ink-muted);
+    direction: rtl;
+    margin-bottom: 0.5rem;
+  }
+
+  .movement-card p {
+    font-size: 0.82rem;
+    color: var(--color-ink-light);
+    line-height: 1.5;
+  }
+
+  /* Institutions */
+  .institutions-section {
+    background: var(--color-surface);
+    padding: var(--space-xl) 0;
+  }
+
+  .inst-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: var(--space-sm);
+  }
+
+  .inst-card {
+    background: white;
+    padding: var(--space-md);
+    border: 1px solid var(--color-border);
+    transition: border-color 0.3s;
+  }
+
+  .inst-card:hover { border-color: var(--color-accent); }
+
+  .inst-type {
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--color-accent);
+    margin-bottom: 0.5rem;
+  }
+
+  .inst-card h3 { font-size: 1.1rem; margin-bottom: 0.5rem; }
+
+  .inst-card p {
+    font-size: 0.85rem;
+    color: var(--color-ink-light);
+    line-height: 1.5;
+  }
+
+  .inst-year {
+    display: block;
+    margin-top: 0.5rem;
+    font-size: 0.75rem;
+    color: var(--color-ink-muted);
+  }
+
+  /* Cities */
+  .cities-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+  }
+
+  .city-chip {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    padding: 0.6rem 1.2rem;
+    border: 1px solid var(--color-border);
+    transition: border-color 0.3s, background 0.3s;
+  }
+
+  .city-chip:hover {
+    border-color: var(--color-accent);
+    background: white;
+  }
+
+  .city-name { font-weight: 500; }
+
+  .city-ar {
+    font-size: 0.85rem;
+    color: var(--color-ink-muted);
+    direction: rtl;
+  }
+
+  @media (max-width: 768px) {
+    .hero { padding: var(--space-xl) 0 var(--space-lg); }
+    .hero-stats { gap: var(--space-md); flex-wrap: wrap; }
+    .movements-row { grid-template-columns: 1fr; }
+    .inst-grid { grid-template-columns: 1fr; }
+  }
+</style>

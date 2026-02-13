@@ -1,0 +1,79 @@
+---
+import Base from '../../layouts/Base.astro';
+import { getArtworks, getArtworkBySlug, getArtistBySlug, getArtists, getMovements } from '../../lib/supabase';
+
+export async function getStaticPaths() {
+  const artworks = await getArtworks();
+  return artworks.map(w => ({ params: { slug: w.slug } }));
+}
+
+const { slug } = Astro.params;
+const artwork = await getArtworkBySlug(slug!);
+if (!artwork) return Astro.redirect('/artworks');
+
+const artists = await getArtists();
+const artist = artwork.artist_id ? artists.find(a => a.id === artwork.artist_id) : null;
+const allMovements = await getMovements();
+const movement = artwork.movement_id ? allMovements.find(m => m.id === artwork.movement_id) : null;
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "VisualArtwork",
+  "name": artwork.title,
+  ...(artist && { "creator": { "@type": "Person", "name": artist.name } }),
+  ...(artwork.year && { "dateCreated": artwork.year.toString() }),
+  ...(artwork.materials && { "artMedium": artwork.materials }),
+  ...(artwork.description && { "description": artwork.description }),
+};
+---
+
+<Base title={`${artwork.title} — Morocco Art Guide`} description={artwork.description || `${artwork.title} by ${artist?.name || 'Unknown'}`}>
+  <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+
+  <article class="section-inner artwork-detail">
+    <header class="artwork-header">
+      <span class="micro-label">
+        {artwork.year}{artwork.year_end ? `–${artwork.year_end}` : ''}
+      </span>
+      <h1>{artwork.title}</h1>
+      {artwork.title_ar && <p class="title-ar">{artwork.title_ar}</p>}
+      {artist && <p class="artist-name"><a href={`/artists/${artist.slug}`}>{artist.name}</a></p>}
+    </header>
+
+    {artwork.image_url && (
+      <div class="artwork-image">
+        <img src={artwork.image_url} alt={artwork.title} />
+      </div>
+    )}
+
+    <div class="artwork-info">
+      <dl class="info-grid">
+        {artwork.materials && <><dt>Medium</dt><dd>{artwork.materials}</dd></>}
+        {artwork.dimensions && <><dt>Dimensions</dt><dd>{artwork.dimensions}</dd></>}
+        {artwork.current_location && <><dt>Collection</dt><dd>{artwork.current_location}</dd></>}
+        {movement && <><dt>Movement</dt><dd><a href={`/movements/${movement.slug}`}>{movement.name}</a></dd></>}
+      </dl>
+
+      {artwork.description && (
+        <div class="artwork-desc">
+          <p>{artwork.description}</p>
+        </div>
+      )}
+    </div>
+  </article>
+</Base>
+
+<style>
+  .artwork-header { padding: var(--space-xl) 0 var(--space-md); }
+  .title-ar { font-size: 1.3rem; color: var(--color-ink-muted); direction: rtl; margin-top: 0.3rem; }
+  .artist-name { margin-top: 0.5rem; font-size: 1.1rem; }
+  .artist-name a { color: var(--color-accent); border-bottom: 1px solid transparent; transition: border-color 0.2s; }
+  .artist-name a:hover { border-bottom-color: var(--color-accent); }
+  .artwork-image { margin-bottom: var(--space-md); max-width: 800px; background: var(--color-surface); padding: var(--space-sm); }
+  .artwork-info { max-width: var(--max-width-narrow); }
+  .info-grid { display: grid; grid-template-columns: 120px 1fr; gap: 0.5rem var(--space-md); margin-bottom: var(--space-md); }
+  .info-grid dt { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-ink-muted); }
+  .info-grid dd { font-size: 0.95rem; color: var(--color-ink-light); }
+  .info-grid dd a { color: var(--color-accent); }
+  .artwork-desc p { font-size: 1.05rem; line-height: 1.7; color: var(--color-ink-light); }
+</style>

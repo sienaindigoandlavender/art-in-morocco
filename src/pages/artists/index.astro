@@ -1,0 +1,42 @@
+---
+import Base from '../../layouts/Base.astro';
+import { getArtists } from '../../lib/supabase';
+const artists = await getArtists();
+---
+
+<Base title="Moroccan Artists — Morocco Art Guide" description={`${artists.length} Moroccan artists from the Casablanca School to contemporary — biography, works, movements.`}>
+  <div class="section-inner">
+    <div class="page-header">
+      <span class="micro-label">Artists</span>
+      <h1>Moroccan Artists</h1>
+      <p class="page-desc">{artists.length} artists who shaped — and continue to shape — Moroccan art.</p>
+    </div>
+
+    <div class="card-grid">
+      {artists.map(a => (
+        <a href={`/artists/${a.slug}`} class="card">
+          <div class="card-image">
+            {a.photo_url && <img src={a.photo_url} alt={a.name} loading="lazy" />}
+          </div>
+          <div class="card-body">
+            <span class="micro-label">
+              {a.birth_year}{a.death_year ? `–${a.death_year}` : '–present'}
+            </span>
+            <h3>{a.name}</h3>
+            {a.name_ar && <p class="card-meta">{a.name_ar}</p>}
+            {a.biography_short && <p class="card-excerpt">{a.biography_short.slice(0, 120)}…</p>}
+          </div>
+        </a>
+      ))}
+    </div>
+  </div>
+</Base>
+
+<style>
+  .card-excerpt {
+    font-size: 0.82rem;
+    color: var(--color-ink-light);
+    line-height: 1.5;
+    margin-top: 0.4rem;
+  }
+</style>

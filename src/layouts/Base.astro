@@ -1,0 +1,449 @@
+---
+interface Props {
+  title: string;
+  description?: string;
+  image?: string;
+  settings?: Record<string, string>;
+}
+
+const { title, description, image, settings: passedSettings } = Astro.props;
+import { getSiteSettings, getNexusFooterLinks, getNexusPoweredBy, getNexusLegalPages, getNexusSite, type NexusFooterLink } from '../lib/supabase';
+
+const settings = passedSettings || await getSiteSettings();
+const footerLinks = await getNexusFooterLinks();
+const poweredBy = await getNexusPoweredBy();
+const nexusSite = await getNexusSite();
+const legalPages = await getNexusLegalPages();
+
+const footerColumns = new Map<number, { title: string; links: NexusFooterLink[] }>();
+footerLinks.forEach(link => {
+  if (!footerColumns.has(link.column_number)) {
+    footerColumns.set(link.column_number, { title: link.column_title || '', links: [] });
+  }
+  footerColumns.get(link.column_number)!.links.push(link);
+});
+const sortedColumns = Array.from(footerColumns.entries()).sort((a, b) => a[0] - b[0]);
+const desc = description || settings.meta_description || 'Morocco Art Guide — discover Moroccan artists, galleries, movements, and art institutions from the Casablanca School to contemporary.';
+const currentPath = Astro.url.pathname;
+let canonicalPath = currentPath;
+if (canonicalPath !== '/' && canonicalPath.endsWith('/')) canonicalPath = canonicalPath.slice(0, -1);
+const canonicalUrl = `https://moroccoartguide.com${canonicalPath}`;
+const SITE = 'https://moroccoartguide.com';
+---
+
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>{title}</title>
+  <meta name="title" content={title}>
+  <meta name="description" content={desc}>
+  <meta name="author" content="Slow Morocco">
+  <meta name="robots" content="index, follow">
+
+  <link rel="canonical" href={canonicalUrl}>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+
+  <meta property="og:type" content="website">
+  <meta property="og:url" content={canonicalUrl}>
+  <meta property="og:title" content={title}>
+  <meta property="og:description" content={desc}>
+  <meta property="og:image" content={image || `${SITE}/og-image.jpg`}>
+  <meta property="og:site_name" content="Morocco Art Guide">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content={title}>
+  <meta name="twitter:description" content={desc}>
+  <meta name="twitter:image" content={image || `${SITE}/og-image.jpg`}>
+
+  <script type="application/ld+json" set:html={JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "Morocco Art Guide",
+    "url": SITE,
+    "description": "Comprehensive guide to Moroccan art — artists, movements, galleries, and institutions",
+    "publisher": { "@type": "Organization", "name": "Slow Morocco", "url": "https://www.slowmorocco.com" }
+  })} />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="/" class="logo">
+        <span class="logo-text">Morocco Art Guide</span>
+      </a>
+      <nav class="main-nav">
+        <a href="/artists">Artists</a>
+        <a href="/artworks">Works</a>
+        <a href="/movements">Movements</a>
+        <a href="/institutions">Spaces</a>
+        <a href="/cities">Cities</a>
+        <a href="/about">About</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <slot name="hero" />
+    <slot />
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-nav">
+      <div class="container">
+        <div class="footer-grid">
+          <div class="footer-col footer-brand">
+            <a href="/" class="footer-logo">Morocco Art Guide</a>
+            <p class="footer-blurb">A guide to Moroccan art — artists, galleries, movements, and institutions.</p>
+            <p class="footer-powered">
+              {poweredBy?.show_powered_by && (
+                <a href={poweredBy.powered_by_url} target="_blank" rel="noopener">{poweredBy.powered_by_name}</a>
+              )}
+            </p>
+          </div>
+          {sortedColumns.map(([_, col]) => (
+            <div class="footer-col">
+              {col.title && <h4>{col.title}</h4>}
+              <ul>
+                {col.links.map(link => (
+                  <li><a href={link.link_href}>{link.link_label}</a></li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+    <div class="footer-legal">
+      <div class="container footer-legal-inner">
+        <div class="legal-links">
+          {legalPages.map(page => (
+            <a href={`/legal/${page.page_id}`}>{page.page_title}</a>
+          ))}
+        </div>
+        <span class="copyright">© {new Date().getFullYear()} {nexusSite?.site_name || 'Morocco Art Guide'}</span>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>
+
+<style is:global>
+  /* ═══════════════════════════════════════════════════════════════════════════
+     DESIGN TOKENS — Gallery Editorial / Ochre
+  ═══════════════════════════════════════════════════════════════════════════ */
+  :root {
+    --font-display: 'DM Serif Display', Georgia, serif;
+    --font-body: 'DM Sans', -apple-system, sans-serif;
+
+    --color-bg: #FAFAF7;
+    --color-surface: #F2F0EB;
+    --color-ink: #1A1814;
+    --color-ink-light: #4A4640;
+    --color-ink-muted: #8A857D;
+    --color-accent: #8B7355;
+    --color-accent-hover: #6D5A42;
+    --color-border: #E2DED6;
+    --color-border-dark: #C8C2B8;
+
+    --color-dark-bg: #1A1814;
+    --color-dark-surface: #242018;
+    --color-dark-text: #F2F0EB;
+    --color-dark-muted: #A09A90;
+
+    --space-xs: 0.5rem;
+    --space-sm: 1rem;
+    --space-md: 2rem;
+    --space-lg: 4rem;
+    --space-xl: 6rem;
+    --space-2xl: 10rem;
+
+    --max-width: 1280px;
+    --max-width-narrow: 800px;
+  }
+
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { font-size: 16px; -webkit-font-smoothing: antialiased; }
+
+  body {
+    font-family: var(--font-body);
+    background: var(--color-bg);
+    color: var(--color-ink);
+    line-height: 1.6;
+  }
+
+  .container {
+    max-width: var(--max-width);
+    margin: 0 auto;
+    padding: 0 var(--space-md);
+  }
+
+  a { color: inherit; text-decoration: none; }
+
+  img { max-width: 100%; height: auto; display: block; }
+
+  h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 400; line-height: 1.15; }
+
+  h1 { font-size: clamp(2.4rem, 5vw, 3.6rem); letter-spacing: -0.01em; }
+  h2 { font-size: clamp(1.8rem, 3.5vw, 2.6rem); letter-spacing: -0.01em; }
+  h3 { font-size: clamp(1.2rem, 2vw, 1.5rem); }
+
+  /* Micro label — editorial accent */
+  .micro-label {
+    font-family: var(--font-body);
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--color-accent);
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     HEADER
+  ═══════════════════════════════════════════════════════════════════════════ */
+  .site-header {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: var(--color-bg);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .header-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 3.5rem;
+  }
+
+  .logo-text {
+    font-family: var(--font-display);
+    font-size: 1.15rem;
+    color: var(--color-ink);
+  }
+
+  .main-nav {
+    display: flex;
+    gap: 1.8rem;
+  }
+
+  .main-nav a {
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--color-ink-light);
+    letter-spacing: 0.02em;
+    transition: color 0.2s;
+  }
+
+  .main-nav a:hover { color: var(--color-accent); }
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     FOOTER
+  ═══════════════════════════════════════════════════════════════════════════ */
+  .site-footer {
+    margin-top: var(--space-2xl);
+  }
+
+  .footer-nav {
+    background: var(--color-dark-bg);
+    color: var(--color-dark-text);
+    padding: var(--space-lg) 0;
+  }
+
+  .footer-grid {
+    display: grid;
+    grid-template-columns: 1.5fr repeat(auto-fit, minmax(140px, 1fr));
+    gap: var(--space-lg);
+  }
+
+  .footer-logo {
+    font-family: var(--font-display);
+    font-size: 1.15rem;
+    color: var(--color-dark-text);
+    display: block;
+    margin-bottom: var(--space-sm);
+  }
+
+  .footer-blurb {
+    font-size: 0.85rem;
+    color: var(--color-dark-muted);
+    line-height: 1.5;
+    margin-bottom: var(--space-sm);
+  }
+
+  .footer-powered a {
+    font-size: 0.75rem;
+    color: var(--color-dark-muted);
+    transition: color 0.2s;
+  }
+
+  .footer-powered a:hover { color: var(--color-dark-text); }
+
+  .footer-col h4 {
+    font-family: var(--font-body);
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--color-dark-muted);
+    margin-bottom: var(--space-sm);
+  }
+
+  .footer-col ul { list-style: none; }
+
+  .footer-col li { margin-bottom: 0.4rem; }
+
+  .footer-col li a {
+    font-size: 0.85rem;
+    color: rgba(255,255,255,0.7);
+    transition: color 0.2s;
+  }
+
+  .footer-col li a:hover { color: white; }
+
+  .footer-legal {
+    background: #0e0e0e;
+    padding: var(--space-sm) 0;
+  }
+
+  .footer-legal-inner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .legal-links {
+    display: flex;
+    gap: 1.5rem;
+  }
+
+  .legal-links a {
+    font-size: 0.72rem;
+    color: rgba(255,255,255,0.4);
+    transition: color 0.2s;
+  }
+
+  .legal-links a:hover { color: rgba(255,255,255,0.7); }
+
+  .copyright {
+    font-size: 0.72rem;
+    color: rgba(255,255,255,0.3);
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     SHARED PAGE STYLES
+  ═══════════════════════════════════════════════════════════════════════════ */
+  .page-header {
+    padding: var(--space-xl) 0 var(--space-lg);
+    text-align: center;
+  }
+
+  .page-header h1 {
+    margin-top: var(--space-xs);
+  }
+
+  .page-header .page-desc {
+    max-width: 600px;
+    margin: var(--space-sm) auto 0;
+    color: var(--color-ink-light);
+    font-size: 1.05rem;
+    line-height: 1.6;
+  }
+
+  .section-header {
+    margin-bottom: var(--space-md);
+  }
+
+  .section-header h2 {
+    margin-top: 0.3rem;
+  }
+
+  section {
+    margin-bottom: var(--space-xl);
+  }
+
+  .section-inner {
+    max-width: var(--max-width);
+    margin: 0 auto;
+    padding: 0 var(--space-md);
+  }
+
+  /* Card grid */
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: var(--space-md);
+  }
+
+  .card {
+    background: white;
+    border: 1px solid var(--color-border);
+    transition: border-color 0.3s, box-shadow 0.3s;
+  }
+
+  .card:hover {
+    border-color: var(--color-border-dark);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+  }
+
+  .card-image {
+    aspect-ratio: 3/2;
+    overflow: hidden;
+    background: var(--color-surface);
+  }
+
+  .card-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+  }
+
+  .card:hover .card-image img { transform: scale(1.04); }
+
+  .card-body {
+    padding: var(--space-sm) var(--space-sm) calc(var(--space-sm) + 0.3rem);
+  }
+
+  .card-body h3 {
+    margin-bottom: 0.3rem;
+  }
+
+  .card-meta {
+    font-size: 0.8rem;
+    color: var(--color-ink-muted);
+  }
+
+  .cta-link {
+    display: inline-block;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--color-accent);
+    border-bottom: 1px solid var(--color-accent);
+    padding-bottom: 2px;
+    transition: color 0.2s, border-color 0.2s;
+    margin-top: var(--space-md);
+  }
+
+  .cta-link:hover {
+    color: var(--color-accent-hover);
+    border-color: var(--color-accent-hover);
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     RESPONSIVE
+  ═══════════════════════════════════════════════════════════════════════════ */
+  @media (max-width: 768px) {
+    .main-nav { display: none; }
+    .footer-grid { grid-template-columns: 1fr; }
+    .footer-legal-inner { flex-direction: column; gap: 0.5rem; text-align: center; }
+    .legal-links { flex-wrap: wrap; justify-content: center; }
+  }
+</style>

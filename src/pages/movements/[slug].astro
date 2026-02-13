@@ -1,0 +1,90 @@
+---
+import Base from '../../layouts/Base.astro';
+import { getMovements, getMovementBySlug, getMovementArtists, getArtists, getArtworks } from '../../lib/supabase';
+
+export async function getStaticPaths() {
+  const movements = await getMovements();
+  return movements.map(m => ({ params: { slug: m.slug } }));
+}
+
+const { slug } = Astro.params;
+const movement = await getMovementBySlug(slug!);
+if (!movement) return Astro.redirect('/movements');
+
+const artistIds = await getMovementArtists(movement.id);
+const allArtists = await getArtists();
+const artists = allArtists.filter(a => artistIds.includes(a.id));
+const allArtworks = await getArtworks();
+const artworks = allArtworks.filter(w => w.movement_id === movement.id);
+---
+
+<Base title={`${movement.name} — Morocco Art Guide`} description={movement.description || `${movement.name} — Moroccan art movement`}>
+  <article class="section-inner">
+    <header class="page-header" style="text-align: left;">
+      <span class="micro-label">
+        {movement.period_start}{movement.period_end ? `–${movement.period_end}` : '–present'}
+      </span>
+      <h1>{movement.name}</h1>
+      {movement.name_ar && <p class="name-ar">{movement.name_ar}</p>}
+    </header>
+
+    {movement.description && (
+      <div class="movement-desc">
+        <p>{movement.description}</p>
+      </div>
+    )}
+
+    {artists.length > 0 && (
+      <section>
+        <div class="section-header">
+          <span class="micro-label">Artists</span>
+          <h2>Key Figures</h2>
+        </div>
+        <div class="card-grid">
+          {artists.map(a => (
+            <a href={`/artists/${a.slug}`} class="card">
+              <div class="card-image">
+                {a.photo_url && <img src={a.photo_url} alt={a.name} loading="lazy" />}
+              </div>
+              <div class="card-body">
+                <h3>{a.name}</h3>
+                <span class="card-meta">{a.birth_year}–{a.death_year || 'present'}</span>
+              </div>
+            </a>
+          ))}
+        </div>
+      </section>
+    )}
+
+    {artworks.length > 0 && (
+      <section>
+        <div class="section-header">
+          <span class="micro-label">Works</span>
+          <h2>Associated Works</h2>
+        </div>
+        <div class="card-grid">
+          {artworks.map(w => {
+            const artist = w.artist_id ? allArtists.find(a => a.id === w.artist_id) : null;
+            return (
+              <a href={`/artworks/${w.slug}`} class="card">
+                <div class="card-image">
+                  {w.image_url && <img src={w.image_url} alt={w.title} loading="lazy" />}
+                </div>
+                <div class="card-body">
+                  <h3>{w.title}</h3>
+                  {artist && <span class="card-meta">{artist.name}, {w.year}</span>}
+                </div>
+              </a>
+            );
+          })}
+        </div>
+      </section>
+    )}
+  </article>
+</Base>
+
+<style>
+  .name-ar { font-size: 1.5rem; color: var(--color-ink-muted); direction: rtl; }
+  .movement-desc { max-width: var(--max-width-narrow); margin-bottom: var(--space-xl); }
+  .movement-desc p { font-size: 1.1rem; line-height: 1.7; color: var(--color-ink-light); }
+</style>

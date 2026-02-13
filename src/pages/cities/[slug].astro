@@ -1,0 +1,62 @@
+---
+import Base from '../../layouts/Base.astro';
+import { getCities, getInstitutions } from '../../lib/supabase';
+
+export async function getStaticPaths() {
+  const cities = await getCities();
+  return cities.map(c => ({ params: { slug: c.slug } }));
+}
+
+const { slug } = Astro.params;
+const cities = await getCities();
+const city = cities.find(c => c.slug === slug);
+if (!city) return Astro.redirect('/cities');
+
+const institutions = await getInstitutions();
+const cityInstitutions = institutions.filter(i => i.city_id === city.id || i.city_id === `city-${city.slug}`);
+---
+
+<Base title={`Art in ${city.name} — Morocco Art Guide`} description={city.description || `Art spaces and galleries in ${city.name}, Morocco`}>
+  <article class="section-inner">
+    <header class="page-header" style="text-align: left;">
+      <span class="micro-label">City</span>
+      <h1>{city.name}</h1>
+      {city.name_ar && <p class="name-ar">{city.name_ar}</p>}
+      {city.description && <p class="page-desc" style="margin-left:0;">{city.description}</p>}
+    </header>
+
+    {cityInstitutions.length > 0 ? (
+      <section>
+        <div class="section-header">
+          <span class="micro-label">{cityInstitutions.length} Art Spaces</span>
+          <h2>Where to See Art in {city.name}</h2>
+        </div>
+        <div class="inst-list">
+          {cityInstitutions.map(inst => (
+            <a href={`/institutions/${inst.slug}`} class="inst-row">
+              <div>
+                <span class="inst-type">{inst.type}</span>
+                <h3>{inst.name}</h3>
+                {inst.description && <p>{inst.description.slice(0, 140)}{inst.description.length > 140 ? '…' : ''}</p>}
+              </div>
+            </a>
+          ))}
+        </div>
+      </section>
+    ) : (
+      <p class="no-results">No art spaces listed for {city.name} yet.</p>
+    )}
+  </article>
+</Base>
+
+<style>
+  .name-ar { font-size: 1.5rem; color: var(--color-ink-muted); direction: rtl; }
+  .inst-list { display: flex; flex-direction: column; }
+  .inst-row { padding: var(--space-sm) 0; border-bottom: 1px solid var(--color-border); transition: background 0.2s; }
+  .inst-row:first-child { border-top: 1px solid var(--color-border); }
+  .inst-row:hover { background: var(--color-surface); padding-left: var(--space-xs); }
+  .inst-type { font-size: 0.65rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--color-accent); }
+  .inst-row h3 { font-size: 1.05rem; margin: 0.2rem 0; }
+  .inst-row p { font-size: 0.85rem; color: var(--color-ink-light); line-height: 1.4; }
+  .no-results { color: var(--color-ink-muted); font-style: italic; }
+</style>

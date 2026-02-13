@@ -1,0 +1,26 @@
+# Morocco Art Guide
+> Comprehensive guide to Moroccan visual art — artists, movements, galleries, and institutions.
+
+## About
+Morocco Art Guide documents Moroccan painters, sculptors, photographers, and multimedia artists from the Casablanca School (1960s) to contemporary. It maps museums, galleries, residencies, and cultural centres across Morocco.
+
+## Key Sections
+- /artists — 21 Moroccan artists with biographies and works
+- /artworks — Significant works with materials, dimensions, provenance
+- /movements — Art movements including the Casablanca School, Saqqia el-Hamra
+- /institutions — 45 museums, galleries, residencies, cultural centres
+- /cities — Art scene by city (Casablanca, Marrakech, Rabat, Fes, Tangier)
+
+## Key Artists
+- Farid Belkahia (1934–2014) — Casablanca School founder
+- Mohamed Melehi (1936–2020) — Geometric abstraction pioneer
+- Chaïbia Talal (1929–2004) — Self-taught expressionist
+- Hassan Hajjaj (1961–) — "Andy Warhol of Marrakech"
+- Lalla Essaydi (1956–) — Feminist photography
+- Mohamed Chabâa (1935–2013) — Public art and murals
+
+## Citation Format
+Morocco Art Guide, moroccoartguide.com. Published by Slow Morocco SARL.
+
+## Contact
+hello@slowmorocco.com

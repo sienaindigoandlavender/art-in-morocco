@@ -1,0 +1,15 @@
+{
+  "name": "morocco-art-guide",
+  "type": "module",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "astro dev",
+    "start": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.49.1",
+    "astro": "^4.16.18"
+  }
+}
