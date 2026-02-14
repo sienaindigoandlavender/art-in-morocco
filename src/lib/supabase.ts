@@ -70,19 +70,19 @@ export interface Genre { id: string; slug: string; name: string; description: st
 
 // Site data queries
 export async function getArtists(): Promise<Artist[]> {
-  const { data, error } = await getSupabase().from('artists').select('*').eq('status', 'published').order('name');
+  const { data, error } = await getSupabase().from('artists').select('*').eq('status', 'PUBLISHED').order('name');
   if (error) { console.error('[Art] Artists error:', error.message); return []; }
   return data as Artist[];
 }
 
 export async function getArtistBySlug(slug: string): Promise<Artist | null> {
-  const { data, error } = await getSupabase().from('artists').select('*').eq('slug', slug).eq('status', 'published').single();
+  const { data, error } = await getSupabase().from('artists').select('*').eq('slug', slug).eq('status', 'PUBLISHED').single();
   if (error) return null;
   return data as Artist;
 }
 
 export async function getArtworks(): Promise<Artwork[]> {
-  const { data, error } = await getSupabase().from('artworks').select('*').eq('status', 'published').order('year');
+  const { data, error } = await getSupabase().from('artworks').select('*').eq('status', 'PUBLISHED').order('year');
   if (error) { console.error('[Art] Artworks error:', error.message); return []; }
   return data as Artwork[];
 }
@@ -94,7 +94,7 @@ export async function getArtworkBySlug(slug: string): Promise<Artwork | null> {
 }
 
 export async function getArtworksByArtist(artistId: string): Promise<Artwork[]> {
-  const { data, error } = await getSupabase().from('artworks').select('*').eq('artist_id', artistId).eq('status', 'published').order('year');
+  const { data, error } = await getSupabase().from('artworks').select('*').eq('artist_id', artistId).eq('status', 'PUBLISHED').order('year');
   if (error) return [];
   return data as Artwork[];
 }
