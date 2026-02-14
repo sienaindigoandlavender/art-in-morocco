@@ -1,6 +1,6 @@
 ---
 import Base from '../../layouts/Base.astro';
-import { getArtists, getArtistBySlug, getArtworksByArtist, getMovements, getArtistMovements } from '../../lib/supabase';
+import { getArtists, getArtistBySlug, getArtworksByArtist, getMovements, getArtistMovements, getObjectTypes } from '../../lib/supabase';
 
 export async function getStaticPaths() {
   const artists = await getArtists();
@@ -15,21 +15,28 @@ const artworks = await getArtworksByArtist(artist.id);
 const movementIds = await getArtistMovements(artist.id);
 const allMovements = await getMovements();
 const movements = allMovements.filter(m => movementIds.includes(m.id));
+const objectTypes = await getObjectTypes();
+const primaryType = artist.primary_object_type_id ? objectTypes.find(o => o.id === artist.primary_object_type_id) : null;
 
-const lifespan = [
-  artist.birth_year,
-  artist.death_year ? `–${artist.death_year}` : '–present'
-].filter(Boolean).join('');
+const lifespan = `${artist.birth_year || '?'}–${artist.death_year || 'present'}`;
+const active = artist.active_period_start ? `${artist.active_period_start}–${artist.active_period_end || 'present'}` : '';
+
+const mediumIcons: Record<string, string> = {
+  'painting': '◼', 'photograph': '◻', 'print': '⊞', 'drawing': '△',
+  'sculpture': '◇', 'mixed-media': '◈', 'installation': '○', 'video': '▷', 'textile': '⬡',
+};
 
 const jsonLd = {
   "@context": "https://schema.org",
   "@type": "Person",
   "name": artist.name,
+  ...(artist.name_ar && { "alternateName": artist.name_ar }),
   "birthDate": artist.birth_year?.toString(),
   ...(artist.death_year && { "deathDate": artist.death_year.toString() }),
   "description": artist.biography_short,
   ...(artist.website_url && { "url": artist.website_url }),
-  "nationality": { "@type": "Country", "name": "Morocco" }
+  "nationality": { "@type": "Country", "name": "Morocco" },
+  ...(primaryType && { "hasOccupation": { "@type": "Occupation", "name": primaryType.name } }),
 };
 
 const faqSchema = {
@@ -39,26 +46,17 @@ const faqSchema = {
     {
       "@type": "Question",
       "name": `Who is ${artist.name}?`,
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": artist.biography_short || `${artist.name} (${lifespan}) is a Moroccan artist documented by Morocco Art Guide.`
-      }
+      "acceptedAnswer": { "@type": "Answer", "text": artist.biography_short || `${artist.name} (${lifespan}) is a Moroccan artist.` }
     },
     ...(movements.length > 0 ? [{
       "@type": "Question",
       "name": `What art movement is ${artist.name} associated with?`,
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": `${artist.name} is associated with ${movements.map(m => `${m.name} (${m.period_start}–${m.period_end || 'present'})`).join(', ')}.`
-      }
+      "acceptedAnswer": { "@type": "Answer", "text": `${artist.name} is associated with ${movements.map(m => `${m.name} (${m.period_start}–${m.period_end || 'present'})`).join(', ')}.` }
     }] : []),
     ...(artworks.length > 0 ? [{
       "@type": "Question",
       "name": `What are the major works of ${artist.name}?`,
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": `Notable works by ${artist.name} include ${artworks.slice(0, 5).map(w => `${w.title} (${w.year}${w.materials ? ', ' + w.materials : ''})`).join('; ')}.`
-      }
+      "acceptedAnswer": { "@type": "Answer", "text": `Notable works include ${artworks.slice(0, 5).map(w => `${w.title} (${w.year}${w.materials ? ', ' + w.materials : ''})`).join('; ')}.` }
     }] : []),
   ]
 };
@@ -68,73 +66,168 @@ const faqSchema = {
   <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
   <script type="application/ld+json" set:html={JSON.stringify(faqSchema)} />
 
-  <article class="section-inner artist-detail">
-    <header class="artist-header">
+  <article class="section-inner">
+    <header class="a-header">
       <span class="micro-label">{lifespan}</span>
       <h1>{artist.name}</h1>
-      {artist.name_ar && <p class="name-ar">{artist.name_ar}</p>}
-      {movements.length > 0 && (
-        <div class="artist-movements">
-          {movements.map(m => (
-            <a href={`/movements/${m.slug}`} class="movement-tag">{m.name}</a>
-          ))}
-        </div>
-      )}
+      {artist.name_ar && <p class="a-arabic">{artist.name_ar}</p>}
     </header>
 
-    {artist.photo_url && (
-      <div class="artist-portrait">
-        <img src={artist.photo_url} alt={artist.name} />
+    <!-- Info card -->
+    <div class="a-info-card">
+      <div class="a-info-row">
+        <span class="a-info-label">Born</span>
+        <span class="a-info-value">{artist.birth_year || 'Unknown'}</span>
       </div>
-    )}
-
-    <div class="artist-bio">
-      {artist.biography && <div class="bio-text" set:html={artist.biography.replace(/\n/g, '<br><br>')} />}
+      {artist.death_year && (
+        <div class="a-info-row">
+          <span class="a-info-label">Died</span>
+          <span class="a-info-value">{artist.death_year}</span>
+        </div>
+      )}
+      {primaryType && (
+        <div class="a-info-row">
+          <span class="a-info-label">Primary Medium</span>
+          <span class="a-info-value">
+            <span class="a-med-icon">{mediumIcons[primaryType.slug] || '●'}</span> {primaryType.name}
+          </span>
+        </div>
+      )}
+      {active && (
+        <div class="a-info-row">
+          <span class="a-info-label">Active Period</span>
+          <span class="a-info-value">{active}</span>
+        </div>
+      )}
+      {movements.length > 0 && (
+        <div class="a-info-row">
+          <span class="a-info-label">Movement{movements.length > 1 ? 's' : ''}</span>
+          <span class="a-info-value">
+            {movements.map((m, i) => (
+              <><a href={`/movements/${m.slug}`} class="a-info-link">{m.name}</a>{i < movements.length - 1 ? ', ' : ''}</>
+            ))}
+          </span>
+        </div>
+      )}
       {artist.website_url && (
-        <p class="artist-link"><a href={artist.website_url} target="_blank" rel="noopener">Website →</a></p>
+        <div class="a-info-row">
+          <span class="a-info-label">Website</span>
+          <a href={artist.website_url} target="_blank" rel="noopener" class="a-info-value a-info-link">
+            {artist.website_url.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '')}
+          </a>
+        </div>
       )}
     </div>
 
+    <!-- Short bio -->
+    {artist.biography_short && (
+      <div class="a-bio-short">
+        <p>{artist.biography_short}</p>
+      </div>
+    )}
+
+    <!-- Full bio (collapsible) -->
+    {artist.biography && (
+      <details class="a-bio-full">
+        <summary>Read full biography</summary>
+        <div class="a-bio-text" set:html={artist.biography.replace(/\n/g, '<br><br>')} />
+      </details>
+    )}
+
+    <!-- Works list -->
     {artworks.length > 0 && (
-      <section class="artist-works">
-        <div class="section-header">
-          <span class="micro-label">Selected Works</span>
-          <h2>Works by {artist.name}</h2>
-        </div>
-        <div class="card-grid">
-          {artworks.map(w => (
-            <a href={`/artworks/${w.slug}`} class="card">
-              <div class="card-image">
-                {w.image_url && <img src={w.image_url} alt={w.title} loading="lazy" />}
-              </div>
-              <div class="card-body">
-                <span class="micro-label">{w.year}{w.year_end ? `–${w.year_end}` : ''}</span>
-                <h3>{w.title}</h3>
-                {w.materials && <p class="card-meta">{w.materials}</p>}
-              </div>
-            </a>
-          ))}
+      <section class="a-works-section">
+        <h2 class="section-title">Selected Works <span class="section-count">{artworks.length}</span></h2>
+        <div class="a-works-list">
+          {artworks.map(w => {
+            const wType = w.object_type_id ? objectTypes.find(o => o.id === w.object_type_id) : null;
+            return (
+              <a href={`/artworks/${w.slug}`} class="a-work-row">
+                <span class="a-work-year">{w.year || '—'}</span>
+                <span class="a-work-title">{w.title}</span>
+                {w.materials && <span class="a-work-materials">{w.materials}</span>}
+                {w.dimensions && <span class="a-work-dim">{w.dimensions}</span>}
+              </a>
+            );
+          })}
         </div>
       </section>
     )}
+
+    <div class="a-nav">
+      <a href="/artists">← Back to directory</a>
+    </div>
   </article>
 </Base>
 
 <style>
-  .artist-header { padding: var(--space-xl) 0 var(--space-md); }
-  .name-ar { font-size: 1.5rem; color: var(--color-ink-muted); direction: rtl; margin-top: 0.3rem; }
-  .artist-movements { display: flex; gap: 0.5rem; margin-top: var(--space-sm); flex-wrap: wrap; }
-  .movement-tag {
-    font-size: 0.75rem; font-weight: 500; letter-spacing: 0.04em;
-    padding: 0.3rem 0.8rem; border: 1px solid var(--color-border);
-    transition: border-color 0.2s, background 0.2s;
+  .a-header { padding: var(--space-xl) 0 var(--space-sm); }
+  .a-arabic { font-size: 1.4rem; color: var(--color-ink-muted); direction: rtl; margin-top: 0.15rem; }
+
+  .a-info-card {
+    max-width: 480px; border: 1px solid var(--color-border);
+    padding: var(--space-sm) var(--space-md);
+    display: flex; flex-direction: column; gap: 0.5rem;
+    margin-bottom: var(--space-md);
   }
-  .movement-tag:hover { border-color: var(--color-accent); background: var(--color-surface); }
-  .artist-portrait { max-width: 600px; margin-bottom: var(--space-md); }
-  .artist-portrait img { width: 100%; }
-  .artist-bio { max-width: var(--max-width-narrow); }
-  .bio-text { font-size: 1.05rem; line-height: 1.7; color: var(--color-ink-light); }
-  .artist-link { margin-top: var(--space-sm); }
-  .artist-link a { color: var(--color-accent); font-weight: 500; border-bottom: 1px solid var(--color-accent); }
-  .artist-works { margin-top: var(--space-xl); }
+
+  .a-info-row { display: flex; gap: 1rem; align-items: baseline; }
+  .a-info-label {
+    font-size: 0.58rem; font-weight: 600; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--color-ink-muted);
+    min-width: 100px; flex-shrink: 0;
+  }
+  .a-info-value { font-size: 0.88rem; color: var(--color-ink); display: flex; align-items: center; gap: 0.3rem; }
+  .a-info-link { color: var(--color-ink); border-bottom: 1px solid transparent; transition: border-color 0.15s; text-decoration: none; }
+  .a-info-link:hover { border-bottom-color: var(--color-ink); }
+  .a-med-icon { font-size: 0.7rem; color: var(--color-ink-muted); }
+
+  .a-bio-short { max-width: 640px; margin-bottom: var(--space-sm); }
+  .a-bio-short p { font-size: 0.95rem; font-weight: 300; color: var(--color-ink-light); line-height: 1.6; }
+
+  .a-bio-full { max-width: 640px; margin-bottom: var(--space-md); }
+  .a-bio-full summary {
+    font-size: 0.72rem; font-weight: 600; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--color-ink-muted);
+    cursor: pointer; padding: 0.4rem 0; border-bottom: 1px solid var(--color-border);
+    list-style: none;
+  }
+  .a-bio-full summary::-webkit-details-marker { display: none; }
+  .a-bio-full summary::before { content: '+ '; }
+  .a-bio-full[open] summary::before { content: '− '; }
+  .a-bio-text { font-size: 0.92rem; font-weight: 300; color: var(--color-ink-light); line-height: 1.65; padding-top: var(--space-sm); }
+
+  .a-works-section { margin-top: var(--space-md); }
+  .section-title {
+    font-family: var(--font-body); font-size: 0.65rem; font-weight: 600;
+    letter-spacing: 0.14em; text-transform: uppercase; color: var(--color-ink-muted);
+    padding-bottom: 0.5rem; border-bottom: 1px solid var(--color-border);
+  }
+  .section-count { font-weight: 400; color: var(--color-border-dark); }
+
+  .a-works-list { display: flex; flex-direction: column; }
+
+  .a-work-row {
+    display: grid; grid-template-columns: 60px 1fr auto auto;
+    gap: 0.8rem; padding: 0.5rem 0; border-bottom: 1px solid var(--color-border);
+    align-items: baseline; transition: padding-left 0.15s; text-decoration: none;
+  }
+  .a-work-row:hover { padding-left: 0.3rem; }
+
+  .a-work-year { font-size: 0.65rem; font-weight: 600; letter-spacing: 0.06em; color: var(--color-ink-muted); }
+  .a-work-title { font-family: var(--font-display); font-size: 0.95rem; color: var(--color-ink); }
+  .a-work-materials { font-size: 0.72rem; color: var(--color-ink-muted); font-weight: 300; }
+  .a-work-dim { font-size: 0.65rem; color: var(--color-ink-muted); font-weight: 300; }
+
+  .a-nav {
+    padding-top: var(--space-md); border-top: 1px solid var(--color-border);
+    margin-top: var(--space-lg);
+  }
+  .a-nav a { font-size: 0.75rem; font-weight: 500; color: var(--color-ink-muted); transition: color 0.15s; }
+  .a-nav a:hover { color: var(--color-ink); }
+
+  @media (max-width: 640px) {
+    .a-work-row { grid-template-columns: 50px 1fr; }
+    .a-work-materials, .a-work-dim { grid-column: 2; }
+  }
 </style>
