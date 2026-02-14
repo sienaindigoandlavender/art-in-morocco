@@ -1,0 +1,344 @@
+---
+import Base from '../layouts/Base.astro';
+import { getArtists, getArtworks, getMovements, getInstitutions, getCities, getObjectTypes } from '../lib/supabase';
+
+const artists = await getArtists();
+const artworks = await getArtworks();
+const movements = await getMovements();
+const institutions = await getInstitutions();
+const cities = await getCities();
+const objectTypes = await getObjectTypes();
+
+const cityMap = new Map(cities.map(c => [c.id, c.name]));
+cities.forEach(c => cityMap.set(`city-${c.slug}`, c.name));
+const objMap = new Map(objectTypes.map(o => [o.id, o.name]));
+const movMap = new Map(movements.map(m => [m.id, m.name]));
+
+const typeConfig: Record<string, string> = {
+  'MUSEUM': 'Museum', 'GALLERY': 'Gallery', 'CULTURAL_CENTER': 'Cultural Centre',
+  'RESIDENCY': 'Residency', 'FOUNDATION': 'Foundation', 'ART_SCHOOL': 'Art School', 'ARTS_CENTER': 'Arts Centre',
+};
+
+// Glossary terms (inline, same as glossary page)
+const glossaryTerms = [
+  { id: "zellige", term: "Zellige", def: "Geometric mosaic tilework from individually chiselled glazed terracotta." },
+  { id: "tadelakt", term: "Tadelakt", def: "Waterproof lime plaster traditional to Marrakech." },
+  { id: "gebs", term: "Gebs", def: "Carved stucco ornamentation with geometric and floral patterns." },
+  { id: "zouak", term: "Zouak", def: "Painted wood decoration on cedar ceilings and doors." },
+  { id: "amazigh", term: "Amazigh", def: "Indigenous people of North Africa." },
+  { id: "tifinagh", term: "Tifinagh", def: "Script of the Amazigh languages." },
+  { id: "henna", term: "Henna", def: "Plant-derived dye used for body decoration." },
+  { id: "moucharabieh", term: "Moucharabieh", def: "Carved wooden lattice screen." },
+  { id: "riad", term: "Riad", def: "Traditional Moroccan house with interior courtyard garden." },
+  { id: "medina", term: "Medina", def: "The old walled city." },
+  { id: "fondouk", term: "Fondouk", def: "Historical caravanserai, now often artisan workshops or galleries." },
+  { id: "souk", term: "Souk", def: "Traditional market organised by trade." },
+  { id: "maalem", term: "Maalem", def: "Master craftsman." },
+  { id: "gnaoua", term: "Gnaoua", def: "Moroccan spiritual tradition with sub-Saharan African roots." },
+  { id: "ecole-des-beaux-arts", term: "École des Beaux-Arts", def: "Fine arts academy in Casablanca." },
+  { id: "orientalism", term: "Orientalism", def: "Western tradition of representing the 'East' through a colonial lens." },
+  { id: "calligraphy-arabic", term: "Arabic Calligraphy", def: "Arabic script as visual art form." },
+  { id: "khettara", term: "Khettara", def: "Ancient underground irrigation channel." },
+  { id: "pise", term: "Pisé", def: "Rammed earth construction technique." },
+];
+
+// Build searchable index
+const searchIndex = [
+  ...artists.map(a => ({
+    type: 'artist' as const,
+    name: a.name,
+    nameAr: a.name_ar || '',
+    url: `/artists/${a.slug}`,
+    desc: a.biography_short || '',
+    meta: [a.birth_year ? `${a.birth_year}–${a.death_year || 'present'}` : '', objMap.get(a.primary_object_type_id || '') || ''].filter(Boolean).join(' · '),
+    city: '',
+  })),
+  ...artworks.map(w => {
+    const artist = w.artist_id ? artists.find(a => a.id === w.artist_id) : null;
+    return {
+      type: 'artwork' as const,
+      name: w.title,
+      nameAr: w.title_ar || '',
+      url: `/artworks/${w.slug}`,
+      desc: artist ? `by ${artist.name}` : '',
+      meta: [w.year?.toString() || '', w.materials || ''].filter(Boolean).join(' · '),
+      city: '',
+    };
+  }),
+  ...institutions.map(i => ({
+    type: 'space' as const,
+    name: i.name,
+    nameAr: i.name_ar || '',
+    url: `/institutions/${i.slug}`,
+    desc: i.description || '',
+    meta: [typeConfig[i.type || ''] || i.type || '', i.city_id ? cityMap.get(i.city_id) || '' : ''].filter(Boolean).join(' · '),
+    city: i.city_id ? cityMap.get(i.city_id) || '' : '',
+  })),
+  ...movements.map(m => ({
+    type: 'movement' as const,
+    name: m.name,
+    nameAr: m.name_ar || '',
+    url: `/movements/${m.slug}`,
+    desc: m.description ? m.description.slice(0, 160) + '…' : '',
+    meta: `${m.period_start || ''}–${m.period_end || 'present'}`,
+    city: '',
+  })),
+  ...cities.map(c => ({
+    type: 'city' as const,
+    name: c.name,
+    nameAr: c.name_ar || '',
+    url: `/cities/${c.slug}`,
+    desc: c.description || '',
+    meta: '',
+    city: c.name,
+  })),
+  ...glossaryTerms.map(g => ({
+    type: 'term' as const,
+    name: g.term,
+    nameAr: '',
+    url: `/glossary#${g.id}`,
+    desc: g.def,
+    meta: '',
+    city: '',
+  })),
+];
+
+const totalCount = searchIndex.length;
+const typeCounts = {
+  artist: artists.length,
+  artwork: artworks.length,
+  space: institutions.length,
+  movement: movements.length,
+  city: cities.length,
+  term: glossaryTerms.length,
+};
+---
+
+<Base title="Search — Morocco Art Guide" description="Search across artists, artworks, galleries, museums, movements, cities, and art terms in Morocco.">
+  <div class="section-inner">
+    <div class="page-header">
+      <span class="micro-label">Search</span>
+      <h1>Search</h1>
+      <p class="page-desc">Across {totalCount} artists, works, spaces, movements, cities, and terms.</p>
+    </div>
+
+    <div class="search-controls">
+      <div class="search-input-wrap">
+        <svg class="search-icon" viewBox="0 0 16 16" fill="none"><circle cx="6.5" cy="6.5" r="5" stroke="currentColor" stroke-width="1.3"/><path d="M10.5 10.5L14.5 14.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        <input type="text" id="search-input" placeholder="Artist, gallery, movement, term…" autocomplete="off" autofocus>
+        <button class="search-clear" id="search-clear" style="display:none;">✕</button>
+      </div>
+
+      <div class="filter-row">
+        <span class="filter-label">Filter</span>
+        <div class="filter-buttons" id="type-filters">
+          <button class="fbtn active" data-type="all">All <span class="fbtn-count">{totalCount}</span></button>
+          <button class="fbtn" data-type="artist">Artists <span class="fbtn-count">{typeCounts.artist}</span></button>
+          <button class="fbtn" data-type="artwork">Works <span class="fbtn-count">{typeCounts.artwork}</span></button>
+          <button class="fbtn" data-type="space">Spaces <span class="fbtn-count">{typeCounts.space}</span></button>
+          <button class="fbtn" data-type="movement">Movements <span class="fbtn-count">{typeCounts.movement}</span></button>
+          <button class="fbtn" data-type="city">Cities <span class="fbtn-count">{typeCounts.city}</span></button>
+          <button class="fbtn" data-type="term">Glossary <span class="fbtn-count">{typeCounts.term}</span></button>
+        </div>
+      </div>
+
+      <div class="results-bar">
+        <span id="results-count"></span>
+      </div>
+    </div>
+
+    <div id="search-results"></div>
+    <div id="no-query" class="no-query">
+      <p>Start typing to search across all of Morocco Art Guide.</p>
+    </div>
+    <div id="no-results" style="display:none;" class="no-results">
+      <p>No results found.</p>
+    </div>
+  </div>
+</Base>
+
+<script define:vars={{ searchIndex }}>
+  document.addEventListener('DOMContentLoaded', () => {
+    const input = document.getElementById('search-input');
+    const clearBtn = document.getElementById('search-clear');
+    const filtersEl = document.getElementById('type-filters');
+    const resultsEl = document.getElementById('search-results');
+    const noQuery = document.getElementById('no-query');
+    const noResults = document.getElementById('no-results');
+    const countEl = document.getElementById('results-count');
+
+    let query = '';
+    let activeType = 'all';
+
+    // Check URL params
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('q')) {
+      query = params.get('q');
+      input.value = query;
+      clearBtn.style.display = 'block';
+    }
+
+    const typeLabels = { artist: 'Artist', artwork: 'Work', space: 'Space', movement: 'Movement', city: 'City', term: 'Term' };
+
+    function render() {
+      const q = query.toLowerCase().trim();
+
+      if (!q) {
+        resultsEl.innerHTML = '';
+        noQuery.style.display = 'block';
+        noResults.style.display = 'none';
+        countEl.textContent = '';
+        return;
+      }
+
+      noQuery.style.display = 'none';
+
+      const filtered = searchIndex.filter(item => {
+        if (activeType !== 'all' && item.type !== activeType) return false;
+        const hay = (item.name + ' ' + item.nameAr + ' ' + item.desc + ' ' + item.meta + ' ' + item.city).toLowerCase();
+        return hay.includes(q);
+      });
+
+      countEl.textContent = filtered.length + ' result' + (filtered.length !== 1 ? 's' : '');
+      noResults.style.display = filtered.length === 0 ? 'block' : 'none';
+
+      let html = '';
+      filtered.forEach(item => {
+        const label = typeLabels[item.type] || item.type;
+        html += '<a href="' + item.url + '" class="sr-card">';
+        html += '<div class="sr-card__top">';
+        html += '<span class="sr-card__type">' + label + '</span>';
+        if (item.meta) html += '<span class="sr-card__meta">' + item.meta + '</span>';
+        html += '</div>';
+        html += '<h3 class="sr-card__name">' + item.name + '</h3>';
+        if (item.nameAr) html += '<span class="sr-card__ar">' + item.nameAr + '</span>';
+        if (item.desc) html += '<p class="sr-card__desc">' + item.desc + '</p>';
+        html += '</a>';
+      });
+
+      resultsEl.innerHTML = html;
+    }
+
+    input.addEventListener('input', (e) => {
+      query = e.target.value;
+      clearBtn.style.display = query ? 'block' : 'none';
+      render();
+    });
+
+    clearBtn.addEventListener('click', () => {
+      input.value = '';
+      query = '';
+      clearBtn.style.display = 'none';
+      input.focus();
+      render();
+    });
+
+    filtersEl.addEventListener('click', (e) => {
+      const btn = e.target.closest('.fbtn');
+      if (!btn) return;
+      filtersEl.querySelectorAll('.fbtn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      activeType = btn.dataset.type;
+      render();
+    });
+
+    // Initial render if query from URL
+    if (query) render();
+  });
+</script>
+
+<style>
+  .search-controls { margin-bottom: var(--space-md); }
+
+  .search-input-wrap { position: relative; margin-bottom: 0.8rem; }
+
+  .search-icon {
+    position: absolute; left: 0; top: 50%; transform: translateY(-50%);
+    width: 18px; height: 18px; color: var(--color-ink-muted);
+  }
+
+  #search-input {
+    width: 100%; font-family: var(--font-body); font-size: 1.1rem; font-weight: 300;
+    padding: 0.7rem 2rem 0.7rem 1.8rem;
+    border: none; border-bottom: 2px solid var(--color-ink);
+    background: transparent; color: var(--color-ink); outline: none;
+  }
+
+  #search-input::placeholder { color: var(--color-ink-muted); font-weight: 300; }
+
+  .search-clear {
+    position: absolute; right: 0; top: 50%; transform: translateY(-50%);
+    background: none; border: none; font-size: 0.9rem;
+    color: var(--color-ink-muted); cursor: pointer; padding: 0.5rem;
+  }
+
+  .filter-row { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 0.6rem; }
+
+  .filter-label {
+    font-size: 0.58rem; font-weight: 600; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--color-ink-muted);
+  }
+
+  .filter-buttons { display: flex; gap: 0.3rem; flex-wrap: wrap; }
+
+  .fbtn {
+    font-family: var(--font-body); font-size: 0.65rem; font-weight: 400;
+    padding: 0.3rem 0.55rem; background: transparent;
+    color: var(--color-ink-muted); border: 1px solid var(--color-border);
+    cursor: pointer; transition: all 0.15s;
+  }
+
+  .fbtn:hover { border-color: var(--color-ink); color: var(--color-ink); }
+  .fbtn.active { background: var(--color-ink); color: white; border-color: var(--color-ink); }
+  .fbtn-count { font-weight: 300; opacity: 0.7; }
+
+  .results-bar { padding: 0.4rem 0; }
+
+  #results-count {
+    font-size: 0.68rem; font-weight: 500; letter-spacing: 0.06em;
+    text-transform: uppercase; color: var(--color-ink-muted);
+  }
+
+  .no-query, .no-results {
+    padding: var(--space-xl) 0; text-align: center;
+    color: var(--color-ink-muted); font-weight: 300;
+  }
+
+  /* Result cards */
+  :global(.sr-card) {
+    display: block; padding: var(--space-sm) 0;
+    border-bottom: 1px solid var(--color-border);
+    text-decoration: none; transition: padding-left 0.15s;
+  }
+
+  :global(.sr-card:hover) { padding-left: 0.4rem; }
+
+  :global(.sr-card__top) {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin-bottom: 0.15rem;
+  }
+
+  :global(.sr-card__type) {
+    font-size: 0.55rem; font-weight: 600; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--color-ink-muted);
+    padding: 0.1rem 0.35rem; border: 1px solid var(--color-border);
+  }
+
+  :global(.sr-card__meta) {
+    font-size: 0.65rem; color: var(--color-ink-muted); font-weight: 400;
+  }
+
+  :global(.sr-card__name) {
+    font-family: var(--font-display); font-size: 1.05rem; color: var(--color-ink);
+  }
+
+  :global(.sr-card__ar) {
+    font-size: 0.8rem; color: var(--color-ink-muted); direction: rtl;
+    display: block; margin-top: 0.05rem;
+  }
+
+  :global(.sr-card__desc) {
+    font-size: 0.8rem; font-weight: 300; color: var(--color-ink-light);
+    line-height: 1.4; margin-top: 0.2rem;
+  }
+</style>
