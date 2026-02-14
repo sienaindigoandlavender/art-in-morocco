@@ -1,6 +1,6 @@
 ---
 import Base from '../../layouts/Base.astro';
-import { getCities, getInstitutions } from '../../lib/supabase';
+import { getCities, getInstitutions, getArtists } from '../../lib/supabase';
 
 export async function getStaticPaths() {
   const cities = await getCities();
@@ -13,50 +13,171 @@ const city = cities.find(c => c.slug === slug);
 if (!city) return Astro.redirect('/cities');
 
 const institutions = await getInstitutions();
-const cityInstitutions = institutions.filter(i => i.city_id === city.id || i.city_id === `city-${city.slug}`);
+const cityInst = institutions.filter(i => i.city_id === city.id || i.city_id === `city-${city.slug}`);
+const artists = await getArtists();
+const cityArtists = artists.filter(a => a.biography?.toLowerCase().includes(city.name.toLowerCase()) || a.biography_short?.toLowerCase().includes(city.name.toLowerCase()));
+
+const typeConfig: Record<string, { label: string; icon: string }> = {
+  'MUSEUM': { label: 'Museum', icon: '◼' }, 'GALLERY': { label: 'Gallery', icon: '◻' },
+  'CULTURAL_CENTER': { label: 'Cultural Centre', icon: '◈' }, 'RESIDENCY': { label: 'Residency', icon: '◇' },
+  'FOUNDATION': { label: 'Foundation', icon: '△' }, 'ART_SCHOOL': { label: 'Art School', icon: '○' },
+  'ARTS_CENTER': { label: 'Arts Centre', icon: '◎' },
+};
+
+const museums = cityInst.filter(i => i.type === 'MUSEUM');
+const galleries = cityInst.filter(i => i.type === 'GALLERY');
+const withCoords = cityInst.filter(i => i.latitude && i.longitude);
+
+const faqSchema = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": `Where can I see art in ${city.name}?`,
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": `${city.name} has ${cityInst.length} art spaces documented by Morocco Art Guide, including ${museums.length} museum${museums.length !== 1 ? 's' : ''} and ${galleries.length} galler${galleries.length !== 1 ? 'ies' : 'y'}. ${museums.length > 0 ? `Key museums include ${museums.slice(0, 3).map(m => m.name).join(', ')}.` : ''}`
+      }
+    },
+    ...(museums.length > 0 ? [{
+      "@type": "Question",
+      "name": `What are the best art museums in ${city.name}?`,
+      "acceptedAnswer": { "@type": "Answer", "text": `The art museums in ${city.name} include ${museums.map(m => `${m.name}${m.admission ? ` (${m.admission})` : ''}`).join('; ')}.` }
+    }] : []),
+    ...(galleries.length > 0 ? [{
+      "@type": "Question",
+      "name": `What art galleries are in ${city.name}?`,
+      "acceptedAnswer": { "@type": "Answer", "text": `${city.name} galleries include ${galleries.map(g => g.name).join(', ')}.` }
+    }] : []),
+  ]
+};
+
+const markersData = withCoords.map(i => ({ slug: i.slug, name: i.name, type: i.type || '', lat: i.latitude, lng: i.longitude }));
 ---
 
-<Base title={`Art in ${city.name} — Morocco Art Guide`} description={city.description || `Art spaces and galleries in ${city.name}, Morocco`}>
+<Base title={`Art in ${city.name} — Museums, Galleries & Spaces`} description={`${cityInst.length} art spaces in ${city.name}, Morocco — museums, galleries, and cultural centres with addresses, hours, and practical information.`}>
+  <script type="application/ld+json" set:html={JSON.stringify(faqSchema)} />
+
   <article class="section-inner">
-    <header class="page-header" style="text-align: left;">
-      <span class="micro-label">City</span>
-      <h1>{city.name}</h1>
+    <header class="city-header">
+      <span class="micro-label">City Guide</span>
+      <h1>Art in {city.name}</h1>
       {city.name_ar && <p class="name-ar">{city.name_ar}</p>}
-      {city.description && <p class="page-desc" style="margin-left:0;">{city.description}</p>}
+      {city.description && <p class="city-intro">{city.description}</p>}
+      <div class="city-stats">
+        <span>{cityInst.length} art spaces</span>
+        {museums.length > 0 && <span>{museums.length} museums</span>}
+        {galleries.length > 0 && <span>{galleries.length} galleries</span>}
+      </div>
     </header>
 
-    {cityInstitutions.length > 0 ? (
-      <section>
-        <div class="section-header">
-          <span class="micro-label">{cityInstitutions.length} Art Spaces</span>
-          <h2>Where to See Art in {city.name}</h2>
-        </div>
-        <div class="inst-list">
-          {cityInstitutions.map(inst => (
-            <a href={`/institutions/${inst.slug}`} class="inst-row">
-              <div>
-                <span class="inst-type">{inst.type}</span>
-                <h3>{inst.name}</h3>
-                {inst.description && <p>{inst.description.slice(0, 140)}{inst.description.length > 140 ? '…' : ''}</p>}
+    {withCoords.length > 0 && <section class="city-map-section"><div id="city-map"></div></section>}
+
+    {Object.keys(typeConfig).map(type => {
+      const items = cityInst.filter(i => i.type === type);
+      if (items.length === 0) return null;
+      const cfg = typeConfig[type];
+      return (
+        <section class="city-type-section">
+          <h2 class="type-heading"><span class="type-icon">{cfg.icon}</span> {cfg.label}{items.length > 1 ? (cfg.label.endsWith('y') ? 'ies' : 's') : ''}</h2>
+          <div class="city-dir">
+            {items.map(inst => (
+              <div class="city-dir-card">
+                <div class="city-dir-card__main">
+                  <a href={`/institutions/${inst.slug}`} class="city-dir-card__name">{inst.name}</a>
+                  {inst.description && <p>{inst.description}</p>}
+                </div>
+                <div class="city-dir-card__info">
+                  {inst.address && <div class="cdi"><svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 1C5.24 1 3 3.24 3 6c0 3.75 5 9 5 9s5-5.25 5-9c0-2.76-2.24-5-5-5zm0 6.5a1.5 1.5 0 110-3 1.5 1.5 0 010 3z" fill="currentColor"/></svg> {inst.address}</div>}
+                  {inst.hours && <div class="cdi"><svg width="13" height="13" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.2"/><path d="M8 4v4.5l3 1.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg> {inst.hours}</div>}
+                  {inst.admission && <div class="cdi"><svg width="13" height="13" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="4" width="13" height="8" rx="1" stroke="currentColor" stroke-width="1.2"/><circle cx="8" cy="8" r="2" stroke="currentColor" stroke-width="1.2"/></svg> {inst.admission}</div>}
+                  {inst.phone && <div class="cdi"><svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M3.6 1.85l1.5-.35a.8.8 0 01.9.45l1 2.2a.8.8 0 01-.2.9L5.5 6.3a8.4 8.4 0 004.2 4.2l1.25-1.3a.8.8 0 01.9-.2l2.2 1a.8.8 0 01.45.9l-.35 1.5A.8.8 0 0113.4 13C7 13 3 9 3 2.6a.8.8 0 01.6-.75z" fill="currentColor"/></svg> <a href={`tel:${inst.phone}`}>{inst.phone}</a></div>}
+                  {inst.website && <div class="cdi"><svg width="13" height="13" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.2"/><path d="M1.5 8h13M8 1.5c1.66 1.63 2.6 3.9 2.6 6.5s-.94 4.87-2.6 6.5c-1.66-1.63-2.6-3.9-2.6-6.5S6.34 3.13 8 1.5z" stroke="currentColor" stroke-width="1.2"/></svg> <a href={inst.website} target="_blank" rel="noopener">{inst.website.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '')}</a></div>}
+                </div>
+                <div class="city-dir-card__actions">
+                  {inst.latitude && inst.longitude && <a href={`https://www.google.com/maps/dir/?api=1&destination=${inst.latitude},${inst.longitude}`} target="_blank" rel="noopener" class="card-action-sm">Save</a>}
+                  <a href={`/institutions/${inst.slug}`} class="card-action-sm">Details →</a>
+                </div>
               </div>
-            </a>
+            ))}
+          </div>
+        </section>
+      );
+    })}
+
+    {cityArtists.length > 0 && (
+      <section>
+        <h2 class="type-heading">Artists associated with {city.name}</h2>
+        <div class="city-artists">
+          {cityArtists.slice(0, 8).map(a => (
+            <a href={`/artists/${a.slug}`} class="city-artist-link">{a.name} <span class="city-artist-years">{a.birth_year}–{a.death_year || ''}</span></a>
           ))}
         </div>
       </section>
-    ) : (
-      <p class="no-results">No art spaces listed for {city.name} yet.</p>
     )}
+
+    <div class="city-nav">
+      <a href="/cities">← All cities</a>
+      <a href="/map">Full map</a>
+      <a href="/institutions">Full directory</a>
+    </div>
   </article>
 </Base>
 
+{withCoords.length > 0 && (
+  <link href="https://api.mapbox.com/mapbox-gl-js/v3.9.0/mapbox-gl.css" rel="stylesheet" />
+  <script src="https://api.mapbox.com/mapbox-gl-js/v3.9.0/mapbox-gl.js" is:inline></script>
+  <script define:vars={{ markersData, mapboxToken: import.meta.env.PUBLIC_MAPBOX_TOKEN || '' }}>
+    document.addEventListener('DOMContentLoaded', () => {
+      const el = document.getElementById('city-map');
+      if (!el || !markersData.length) return;
+      mapboxgl.accessToken = mapboxToken;
+      const bounds = new mapboxgl.LngLatBounds();
+      markersData.forEach(m => bounds.extend([m.lng, m.lat]));
+      const map = new mapboxgl.Map({ container: 'city-map', style: 'mapbox://styles/mapbox/dark-v11', bounds: bounds, fitBoundsOptions: { padding: 60 }, attributionControl: false });
+      map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), 'top-right');
+      const colors = { 'MUSEUM': '#fff', 'GALLERY': '#c23b22', 'CULTURAL_CENTER': '#4a9eff', 'RESIDENCY': '#22c273', 'FOUNDATION': '#f0c040', 'ART_SCHOOL': '#b060e0', 'ARTS_CENTER': '#b060e0' };
+      map.on('load', () => {
+        markersData.forEach(m => {
+          const dot = document.createElement('div');
+          dot.style.cssText = 'width:10px;height:10px;border-radius:50%;border:2px solid rgba(255,255,255,0.3);cursor:pointer;background:' + (colors[m.type] || '#fff');
+          new mapboxgl.Marker({ element: dot, anchor: 'center' }).setLngLat([m.lng, m.lat]).setPopup(
+            new mapboxgl.Popup({ offset: 12, closeButton: false }).setHTML('<a href="/institutions/' + m.slug + '" style="font-size:13px;font-weight:500;color:#0a0a0a;text-decoration:none;">' + m.name + '</a>')
+          ).addTo(map);
+        });
+      });
+    });
+  </script>
+)}
+
 <style>
-  .name-ar { font-size: 1.5rem; color: var(--color-ink-muted); direction: rtl; }
-  .inst-list { display: flex; flex-direction: column; }
-  .inst-row { padding: var(--space-sm) 0; border-bottom: 1px solid var(--color-border); transition: background 0.2s; }
-  .inst-row:first-child { border-top: 1px solid var(--color-border); }
-  .inst-row:hover { background: var(--color-surface); padding-left: var(--space-xs); }
-  .inst-type { font-size: 0.65rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--color-accent); }
-  .inst-row h3 { font-size: 1.05rem; margin: 0.2rem 0; }
-  .inst-row p { font-size: 0.85rem; color: var(--color-ink-light); line-height: 1.4; }
-  .no-results { color: var(--color-ink-muted); font-style: italic; }
+  .city-header { padding: var(--space-xl) 0 var(--space-md); }
+  .name-ar { font-size: 1.5rem; color: var(--color-ink-muted); direction: rtl; margin-top: 0.2rem; }
+  .city-intro { margin-top: var(--space-sm); font-size: 1rem; font-weight: 300; color: var(--color-ink-light); line-height: 1.6; max-width: 640px; }
+  .city-stats { display: flex; gap: 1.2rem; margin-top: var(--space-sm); }
+  .city-stats span { font-size: 0.72rem; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-ink-muted); }
+  .city-map-section { margin-bottom: var(--space-lg); }
+  #city-map { width: 100%; height: 320px; }
+  .city-type-section { margin-bottom: var(--space-lg); }
+  .type-heading { font-family: var(--font-body); font-size: 0.65rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--color-ink-muted); display: flex; align-items: center; gap: 0.35rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--color-border); margin-bottom: 0; }
+  .city-dir-card { display: grid; grid-template-columns: 1fr 280px auto; gap: var(--space-sm); padding: 0.8rem 0; border-bottom: 1px solid var(--color-border); align-items: start; }
+  .city-dir-card__name { font-family: var(--font-display); font-size: 1rem; border-bottom: 1px solid transparent; transition: border-color 0.15s; }
+  .city-dir-card__name:hover { border-bottom-color: var(--color-ink); }
+  .city-dir-card__main p { font-size: 0.8rem; font-weight: 300; color: var(--color-ink-light); line-height: 1.4; margin-top: 0.2rem; }
+  .city-dir-card__info { display: flex; flex-direction: column; gap: 0.25rem; }
+  .cdi { display: flex; align-items: flex-start; gap: 0.35rem; font-size: 0.75rem; color: var(--color-ink-light); font-weight: 300; }
+  .cdi svg { flex-shrink: 0; color: var(--color-ink-muted); margin-top: 1px; }
+  .cdi a { color: var(--color-ink); font-weight: 400; text-decoration: none; }
+  .city-dir-card__actions { display: flex; flex-direction: column; gap: 0.25rem; }
+  .card-action-sm { font-size: 0.62rem; font-weight: 500; padding: 0.2rem 0.45rem; border: 1px solid var(--color-border); color: var(--color-ink-muted); text-decoration: none; text-align: center; transition: all 0.15s; }
+  .card-action-sm:hover { border-color: var(--color-ink); color: var(--color-ink); }
+  .city-artists { display: flex; flex-direction: column; }
+  .city-artist-link { padding: 0.5rem 0; border-bottom: 1px solid var(--color-border); font-family: var(--font-display); font-size: 1rem; transition: padding-left 0.15s; }
+  .city-artist-link:hover { padding-left: 0.3rem; }
+  .city-artist-years { font-family: var(--font-body); font-size: 0.72rem; color: var(--color-ink-muted); margin-left: 0.4rem; }
+  .city-nav { display: flex; gap: var(--space-md); padding-top: var(--space-md); border-top: 1px solid var(--color-border); margin-top: var(--space-lg); }
+  .city-nav a { font-size: 0.75rem; font-weight: 500; color: var(--color-ink-muted); transition: color 0.15s; }
+  .city-nav a:hover { color: var(--color-ink); }
+  @media (max-width: 768px) { .city-dir-card { grid-template-columns: 1fr; } .city-dir-card__actions { flex-direction: row; } }
 </style>

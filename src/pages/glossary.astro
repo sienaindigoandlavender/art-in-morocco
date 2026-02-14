@@ -1,0 +1,85 @@
+---
+import Base from '../layouts/Base.astro';
+
+const terms = [
+  { id: "zellige", term: "Zellige", arabic: "زليج", def: "Geometric mosaic tilework made from individually chiselled pieces of glazed terracotta, a defining feature of Moroccan architecture and a recurring subject in contemporary Moroccan art. Dates to the 10th century." },
+  { id: "tadelakt", term: "Tadelakt", arabic: "تادلاكت", def: "A waterproof lime plaster traditional to Marrakech, polished with flat stones and treated with olive oil soap. Used extensively in riads and hammams. Contemporary artists reference tadelakt's surface qualities in sculptural work." },
+  { id: "gebs", term: "Gebs", arabic: "جبس", def: "Carved plaster ornamentation (stucco). Artisans carve intricate geometric and floral patterns into wet plaster. Farid Belkahia and other Casablanca School artists incorporated gebs techniques into fine art practice." },
+  { id: "zouak", term: "Zouak", arabic: "زواق", def: "Painted wood decoration, typically on cedar ceilings and doors. Features geometric, floral, and calligraphic patterns in polychrome. Part of the traditional decorative arts vocabulary referenced by modern Moroccan painters." },
+  { id: "amazigh", term: "Amazigh", arabic: "أمازيغ", def: "The indigenous people of North Africa, also called Berber (a term some consider pejorative). Amazigh visual culture — including Tifinagh script, tattoo motifs, textile symbols, and jewellery — is a primary source for contemporary Moroccan artists from Belkahia to Essaydi." },
+  { id: "tifinagh", term: "Tifinagh", arabic: "ⵜⵉⴼⵉⵏⴰⵖ", def: "The script of the Amazigh languages, with origins possibly dating to the Libyan alphabet of the 3rd century BCE. Artists including Farid Belkahia and Mohamed Chabâa incorporated Tifinagh characters as visual elements, asserting indigenous identity within modernist practice." },
+  { id: "henna", term: "Henna", arabic: "حنّاء", def: "A plant-derived dye used for body decoration throughout Morocco. Henna patterns carry symbolic meanings — fertility, protection, celebration. Artists like Lalla Essaydi use henna and henna-derived imagery in photographic and mixed-media work." },
+  { id: "moucharabieh", term: "Moucharabieh", arabic: "مشربية", def: "Carved wooden lattice screen allowing light and air while maintaining privacy. A recurring motif in Moroccan art and architecture, often used metaphorically by contemporary artists exploring themes of visibility, concealment, and the gendered division of space." },
+  { id: "riad", term: "Riad", arabic: "رياض", def: "A traditional Moroccan house or palace with an interior courtyard garden. Derived from the Arabic for 'garden.' Many of Morocco's galleries and art spaces occupy restored riads, and the riad form itself — the interplay of interior and exterior, public and private — is a subject in Moroccan visual art." },
+  { id: "medina", term: "Medina", arabic: "مدينة", def: "The old walled city, as distinct from the ville nouvelle (French colonial new town). Morocco's medinas — particularly Fes el-Bali and the Marrakech medina — are UNESCO World Heritage Sites and persistent subjects in Moroccan art, from Orientalist painting to contemporary photography." },
+  { id: "fondouk", term: "Fondouk", arabic: "فندق", def: "A historical caravanserai or commercial warehouse, now often converted to artisan workshops or galleries. The Fondouk (Tangier) and similar spaces serve as contemporary art venues." },
+  { id: "souk", term: "Souk", arabic: "سوق", def: "Traditional market, often organised by trade (leather, metalwork, textiles). Souks are both subject matter and exhibition context — Hassan Hajjaj's work draws directly from souk visual culture, consumer packaging, and craft traditions." },
+  { id: "maalem", term: "Maalem", arabic: "معلم", def: "Master craftsman. A maalem holds the highest level of skill in a traditional trade — zellige cutting, gebs carving, metalwork, woodwork. The distinction between maalem (craftsman) and artist is a central tension in Moroccan art discourse." },
+  { id: "gnaoua", term: "Gnaoua", arabic: "كناوة", def: "A Moroccan spiritual tradition with sub-Saharan African roots combining music, ritual, and healing. The Gnaoua and World Music Festival in Essaouira is Morocco's largest music festival. Gnaoua aesthetics — colour symbolism, trance, rhythm — influence Moroccan visual artists." },
+  { id: "ecole-des-beaux-arts", term: "École des Beaux-Arts", arabic: "", def: "The fine arts academy in Casablanca, directed by Farid Belkahia from 1962 to 1974. Under Belkahia, the school became the intellectual centre of the Casablanca School movement, rejecting French academic curricula in favour of Moroccan artistic traditions and materials." },
+  { id: "orientalism", term: "Orientalism", arabic: "", def: "The Western tradition of representing the 'East' through a colonial lens — exotic, sensual, timeless. Moroccan modern art from the Casablanca School onward defined itself in opposition to Orientalist painting. Artists like Lalla Essaydi explicitly critique and subvert Orientalist tropes." },
+  { id: "calligraphy-arabic", term: "Arabic Calligraphy", arabic: "الخط العربي", def: "Arabic script as visual art form. Moroccan calligraphic traditions include the distinctive Maghrebi script. Contemporary artists from Mohamed Chabâa to Lalla Essaydi use calligraphy as both text and image, often dissolving the boundary between writing and painting." },
+  { id: "khettara", term: "Khettara", arabic: "خطارة", def: "An ancient underground irrigation channel, part of Morocco's pre-Islamic hydraulic engineering heritage. Referenced in landscape and installation art addressing Morocco's relationship to water, desert, and agricultural tradition." },
+  { id: "pise", term: "Pisé", arabic: "طابية", def: "Rammed earth construction technique used throughout southern Morocco. The rose-red walls of Marrakech and the kasbahs of the Draa Valley are built in pisé. Artists and architects reference pisé's materiality — raw earth, compression, colour — in contemporary work." },
+];
+
+const glossarySchema = {
+  "@context": "https://schema.org",
+  "@type": "DefinedTermSet",
+  "name": "Moroccan Art Glossary",
+  "description": "Key terms for understanding Moroccan visual art — materials, traditions, cultural concepts, and architectural vocabulary",
+  "url": "https://moroccoartguide.com/glossary",
+  "publisher": { "@type": "Organization", "name": "Morocco Art Guide" },
+  "hasDefinedTerm": terms.map(t => ({
+    "@type": "DefinedTerm",
+    "name": t.term,
+    "description": t.def,
+    "url": `https://moroccoartguide.com/glossary#${t.id}`,
+    ...(t.arabic && { "alternateName": t.arabic })
+  }))
+};
+
+const faqSchema = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": terms.slice(0, 8).map(t => ({
+    "@type": "Question",
+    "name": `What is ${t.term} in Moroccan art?`,
+    "acceptedAnswer": { "@type": "Answer", "text": t.def }
+  }))
+};
+---
+
+<Base title="Glossary — Moroccan Art Terms" description={`${terms.length} key terms for understanding Moroccan art — zellige, tadelakt, Amazigh symbols, calligraphy, and more.`}>
+  <script type="application/ld+json" set:html={JSON.stringify(glossarySchema)} />
+  <script type="application/ld+json" set:html={JSON.stringify(faqSchema)} />
+
+  <div class="section-inner">
+    <div class="page-header">
+      <span class="micro-label">{terms.length} Terms</span>
+      <h1>Glossary</h1>
+      <p class="page-desc">Materials, traditions, and cultural vocabulary for understanding Moroccan visual art.</p>
+    </div>
+
+    <div class="glossary-list">
+      {terms.map(t => (
+        <div class="gl-entry" id={t.id}>
+          <div class="gl-term">
+            <h2><dfn>{t.term}</dfn></h2>
+            {t.arabic && <span class="gl-arabic">{t.arabic}</span>}
+          </div>
+          <p class="gl-def">{t.def}</p>
+        </div>
+      ))}
+    </div>
+  </div>
+</Base>
+
+<style>
+  .glossary-list { max-width: var(--max-width-narrow); }
+  .gl-entry { padding: var(--space-md) 0; border-bottom: 1px solid var(--color-border); }
+  .gl-term { display: flex; align-items: baseline; gap: 0.6rem; }
+  .gl-term h2 { font-size: 1.2rem; }
+  .gl-arabic { font-size: 1rem; color: var(--color-ink-muted); direction: rtl; }
+  .gl-def { margin-top: 0.4rem; font-size: 0.92rem; font-weight: 300; color: var(--color-ink-light); line-height: 1.6; }
+</style>

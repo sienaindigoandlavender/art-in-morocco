@@ -23,7 +23,7 @@ footerLinks.forEach(link => {
   footerColumns.get(link.column_number)!.links.push(link);
 });
 const sortedColumns = Array.from(footerColumns.entries()).sort((a, b) => a[0] - b[0]);
-const desc = description || settings.meta_description || 'Morocco Art Guide — discover Moroccan artists, galleries, movements, and art institutions from the Casablanca School to contemporary.';
+const desc = description || settings.meta_description || 'Morocco Art Guide — Moroccan artists, galleries, movements and institutions from the Casablanca School to contemporary.';
 const currentPath = Astro.url.pathname;
 let canonicalPath = currentPath;
 if (canonicalPath !== '/' && canonicalPath.endsWith('/')) canonicalPath = canonicalPath.slice(0, -1);
@@ -41,7 +41,7 @@ const SITE = 'https://moroccoartguide.com';
   <meta name="title" content={title}>
   <meta name="description" content={desc}>
   <meta name="author" content="Slow Morocco">
-  <meta name="robots" content="index, follow">
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
 
   <link rel="canonical" href={canonicalUrl}>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
@@ -53,39 +53,68 @@ const SITE = 'https://moroccoartguide.com';
   <meta property="og:description" content={desc}>
   <meta property="og:image" content={image || `${SITE}/og-image.jpg`}>
   <meta property="og:site_name" content="Morocco Art Guide">
+  <meta property="og:locale" content="en_US">
 
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content={title}>
   <meta name="twitter:description" content={desc}>
   <meta name="twitter:image" content={image || `${SITE}/og-image.jpg`}>
 
+  <!-- GEO: AI-optimized structured data -->
   <script type="application/ld+json" set:html={JSON.stringify({
     "@context": "https://schema.org",
     "@type": "WebSite",
     "name": "Morocco Art Guide",
+    "alternateName": "MAG",
     "url": SITE,
-    "description": "Comprehensive guide to Moroccan art — artists, movements, galleries, and institutions",
-    "publisher": { "@type": "Organization", "name": "Slow Morocco", "url": "https://www.slowmorocco.com" }
+    "description": "Comprehensive guide to Moroccan visual art — artists, movements, galleries, and institutions from the Casablanca School to contemporary",
+    "inLanguage": "en",
+    "publisher": {
+      "@type": "Organization",
+      "name": "Slow Morocco",
+      "url": "https://www.slowmorocco.com",
+      "address": { "@type": "PostalAddress", "addressLocality": "Marrakech", "addressCountry": "MA" }
+    },
+    "potentialAction": {
+      "@type": "SearchAction",
+      "target": `${SITE}/search?q={search_term_string}`,
+      "query-input": "required name=search_term_string"
+    }
   })} />
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-0PDYPERR1Y"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-0PDYPERR1Y');
+  </script>
 </head>
 <body>
   <header class="site-header">
     <div class="container header-inner">
       <a href="/" class="logo">
-        <span class="logo-text">Morocco Art Guide</span>
+        <span class="logo-mark">MAG</span>
+        <span class="logo-full">Morocco Art Guide</span>
       </a>
       <nav class="main-nav">
         <a href="/artists">Artists</a>
         <a href="/artworks">Works</a>
         <a href="/movements">Movements</a>
         <a href="/institutions">Spaces</a>
-        <a href="/cities">Cities</a>
-        <a href="/about">About</a>
+        <a href="/map">Map</a>
+        <a href="/glossary">Glossary</a>
+        <a href="/itineraries">Itineraries</a>
+        <a href="/tips">Tips</a>
       </nav>
+      <button class="nav-toggle" aria-label="Menu">
+        <span></span><span></span>
+      </button>
     </div>
   </header>
 
@@ -94,18 +123,33 @@ const SITE = 'https://moroccoartguide.com';
     <slot />
   </main>
 
+  <!-- FOOTER: 3-level ombre -->
   <footer class="site-footer">
-    <div class="footer-nav">
+    <!-- Level 1: Site-specific links -->
+    <div class="footer-l1">
+      <div class="container">
+        <div class="footer-site-links">
+          <a href="/artists">Artists</a>
+          <a href="/artworks">Works</a>
+          <a href="/movements">Movements</a>
+          <a href="/institutions">Spaces</a>
+          <a href="/cities">Cities</a>
+          <a href="/map">Map</a>
+          <a href="/glossary">Glossary</a>
+          <a href="/itineraries">Itineraries</a>
+          <a href="/tips">Tips</a>
+          <a href="/about">About</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Level 2: Navigation columns -->
+    <div class="footer-l2">
       <div class="container">
         <div class="footer-grid">
           <div class="footer-col footer-brand">
             <a href="/" class="footer-logo">Morocco Art Guide</a>
-            <p class="footer-blurb">A guide to Moroccan art — artists, galleries, movements, and institutions.</p>
-            <p class="footer-powered">
-              {poweredBy?.show_powered_by && (
-                <a href={poweredBy.powered_by_url} target="_blank" rel="noopener">{poweredBy.powered_by_name}</a>
-              )}
-            </p>
+            <p class="footer-blurb">Moroccan artists, galleries, movements<br>and institutions.</p>
           </div>
           {sortedColumns.map(([_, col]) => (
             <div class="footer-col">
@@ -120,42 +164,52 @@ const SITE = 'https://moroccoartguide.com';
         </div>
       </div>
     </div>
-    <div class="footer-legal">
-      <div class="container footer-legal-inner">
+
+    <!-- Level 3: Legal + powered by -->
+    <div class="footer-l3">
+      <div class="container footer-l3-inner">
         <div class="legal-links">
           {legalPages.map(page => (
             <a href={`/legal/${page.page_id}`}>{page.page_title}</a>
           ))}
         </div>
         <span class="copyright">© {new Date().getFullYear()} {nexusSite?.site_name || 'Morocco Art Guide'}</span>
+        <a href="https://www.slowmorocco.com" target="_blank" rel="noopener" class="powered-by">Powered by Slow Morocco</a>
       </div>
     </div>
   </footer>
+
+  <script>
+    document.querySelector('.nav-toggle')?.addEventListener('click', () => {
+      document.querySelector('.main-nav')?.classList.toggle('open');
+    });
+  </script>
 </body>
 </html>
 
 <style is:global>
   /* ═══════════════════════════════════════════════════════════════════════════
-     DESIGN TOKENS — Gallery Editorial / Ochre
+     DESIGN TOKENS — Cold Contemporary Gallery
   ═══════════════════════════════════════════════════════════════════════════ */
   :root {
-    --font-display: 'DM Serif Display', Georgia, serif;
-    --font-body: 'DM Sans', -apple-system, sans-serif;
+    --font-display: 'Instrument Serif', Georgia, serif;
+    --font-body: 'Inter', -apple-system, sans-serif;
 
-    --color-bg: #FAFAF7;
-    --color-surface: #F2F0EB;
-    --color-ink: #1A1814;
-    --color-ink-light: #4A4640;
-    --color-ink-muted: #8A857D;
-    --color-accent: #8B7355;
-    --color-accent-hover: #6D5A42;
-    --color-border: #E2DED6;
-    --color-border-dark: #C8C2B8;
+    --color-bg: #ffffff;
+    --color-surface: #f5f5f5;
+    --color-ink: #0a0a0a;
+    --color-ink-light: #3d3d3d;
+    --color-ink-muted: #8c8c8c;
+    --color-accent: #0a0a0a;
+    --color-accent-hover: #333;
+    --color-border: #e0e0e0;
+    --color-border-dark: #b0b0b0;
+    --color-red: #c23b22;
 
-    --color-dark-bg: #1A1814;
-    --color-dark-surface: #242018;
-    --color-dark-text: #F2F0EB;
-    --color-dark-muted: #A09A90;
+    --color-dark-bg: #0a0a0a;
+    --color-dark-surface: #141414;
+    --color-dark-text: #f0f0f0;
+    --color-dark-muted: #707070;
 
     --space-xs: 0.5rem;
     --space-sm: 1rem;
@@ -164,96 +218,137 @@ const SITE = 'https://moroccoartguide.com';
     --space-xl: 6rem;
     --space-2xl: 10rem;
 
-    --max-width: 1280px;
+    --max-width: 1400px;
     --max-width-narrow: 800px;
   }
 
   *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-
-  html { font-size: 16px; -webkit-font-smoothing: antialiased; }
+  html { font-size: 16px; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
 
   body {
     font-family: var(--font-body);
     background: var(--color-bg);
     color: var(--color-ink);
     line-height: 1.6;
+    font-weight: 300;
   }
 
-  .container {
-    max-width: var(--max-width);
-    margin: 0 auto;
-    padding: 0 var(--space-md);
-  }
-
+  .container { max-width: var(--max-width); margin: 0 auto; padding: 0 var(--space-md); }
   a { color: inherit; text-decoration: none; }
-
   img { max-width: 100%; height: auto; display: block; }
 
-  h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 400; line-height: 1.15; }
+  h1, h2, h3, h4, h5 { font-family: var(--font-display); font-weight: 400; line-height: 1.1; }
+  h1 { font-size: clamp(2.8rem, 6vw, 4.5rem); letter-spacing: -0.02em; }
+  h2 { font-size: clamp(1.8rem, 3.5vw, 2.8rem); letter-spacing: -0.02em; }
+  h3 { font-size: clamp(1.15rem, 2vw, 1.4rem); }
 
-  h1 { font-size: clamp(2.4rem, 5vw, 3.6rem); letter-spacing: -0.01em; }
-  h2 { font-size: clamp(1.8rem, 3.5vw, 2.6rem); letter-spacing: -0.01em; }
-  h3 { font-size: clamp(1.2rem, 2vw, 1.5rem); }
-
-  /* Micro label — editorial accent */
   .micro-label {
     font-family: var(--font-body);
-    font-size: 0.7rem;
-    font-weight: 600;
-    letter-spacing: 0.12em;
+    font-size: 0.65rem;
+    font-weight: 500;
+    letter-spacing: 0.16em;
     text-transform: uppercase;
-    color: var(--color-accent);
+    color: var(--color-ink-muted);
   }
 
   /* ═══════════════════════════════════════════════════════════════════════════
-     HEADER
+     HEADER — minimal black bar
   ═══════════════════════════════════════════════════════════════════════════ */
   .site-header {
     position: sticky;
     top: 0;
-    z-index: 50;
-    background: var(--color-bg);
-    border-bottom: 1px solid var(--color-border);
+    z-index: 100;
+    background: var(--color-ink);
+    color: white;
   }
 
   .header-inner {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    height: 3.5rem;
+    height: 3rem;
   }
 
-  .logo-text {
-    font-family: var(--font-display);
-    font-size: 1.15rem;
+  .logo { display: flex; align-items: center; gap: 0.6rem; }
+
+  .logo-mark {
+    font-family: var(--font-body);
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    background: white;
     color: var(--color-ink);
+    padding: 0.15rem 0.4rem;
   }
 
-  .main-nav {
-    display: flex;
-    gap: 1.8rem;
+  .logo-full {
+    font-family: var(--font-body);
+    font-size: 0.78rem;
+    font-weight: 400;
+    letter-spacing: 0.06em;
+    color: rgba(255,255,255,0.8);
   }
+
+  .main-nav { display: flex; gap: 1.6rem; }
 
   .main-nav a {
-    font-size: 0.82rem;
-    font-weight: 500;
-    color: var(--color-ink-light);
-    letter-spacing: 0.02em;
+    font-size: 0.72rem;
+    font-weight: 400;
+    color: rgba(255,255,255,0.6);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
     transition: color 0.2s;
   }
 
-  .main-nav a:hover { color: var(--color-accent); }
+  .main-nav a:hover { color: white; }
 
-  /* ═══════════════════════════════════════════════════════════════════════════
-     FOOTER
-  ═══════════════════════════════════════════════════════════════════════════ */
-  .site-footer {
-    margin-top: var(--space-2xl);
+  .nav-toggle {
+    display: none;
+    background: none; border: none; cursor: pointer;
+    width: 24px; height: 18px; position: relative;
   }
 
-  .footer-nav {
-    background: var(--color-dark-bg);
-    color: var(--color-dark-text);
+  .nav-toggle span {
+    display: block; width: 100%; height: 1px;
+    background: white; position: absolute; left: 0;
+    transition: 0.2s;
+  }
+
+  .nav-toggle span:first-child { top: 4px; }
+  .nav-toggle span:last-child { bottom: 4px; }
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     FOOTER — 3-level ombre
+  ═══════════════════════════════════════════════════════════════════════════ */
+  .site-footer { margin-top: var(--space-2xl); }
+
+  /* Level 1 — site links */
+  .footer-l1 {
+    background: #1f1f1f;
+    padding: var(--space-md) 0;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .footer-site-links {
+    display: flex;
+    gap: 2rem;
+    justify-content: center;
+  }
+
+  .footer-site-links a {
+    font-size: 0.75rem;
+    font-weight: 400;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.5);
+    transition: color 0.2s;
+  }
+
+  .footer-site-links a:hover { color: white; }
+
+  /* Level 2 — navigation */
+  .footer-l2 {
+    background: #161616;
     padding: var(--space-lg) 0;
   }
 
@@ -265,109 +360,95 @@ const SITE = 'https://moroccoartguide.com';
 
   .footer-logo {
     font-family: var(--font-display);
-    font-size: 1.15rem;
-    color: var(--color-dark-text);
+    font-size: 1.2rem;
+    color: white;
     display: block;
-    margin-bottom: var(--space-sm);
+    margin-bottom: 0.6rem;
   }
 
   .footer-blurb {
-    font-size: 0.85rem;
-    color: var(--color-dark-muted);
+    font-size: 0.8rem;
+    color: rgba(255,255,255,0.4);
     line-height: 1.5;
-    margin-bottom: var(--space-sm);
+    font-weight: 300;
   }
-
-  .footer-powered a {
-    font-size: 0.75rem;
-    color: var(--color-dark-muted);
-    transition: color 0.2s;
-  }
-
-  .footer-powered a:hover { color: var(--color-dark-text); }
 
   .footer-col h4 {
     font-family: var(--font-body);
-    font-size: 0.7rem;
+    font-size: 0.6rem;
     font-weight: 600;
-    letter-spacing: 0.1em;
+    letter-spacing: 0.14em;
     text-transform: uppercase;
-    color: var(--color-dark-muted);
-    margin-bottom: var(--space-sm);
+    color: rgba(255,255,255,0.3);
+    margin-bottom: 0.8rem;
   }
 
   .footer-col ul { list-style: none; }
-
-  .footer-col li { margin-bottom: 0.4rem; }
+  .footer-col li { margin-bottom: 0.35rem; }
 
   .footer-col li a {
-    font-size: 0.85rem;
-    color: rgba(255,255,255,0.7);
+    font-size: 0.8rem;
+    font-weight: 300;
+    color: rgba(255,255,255,0.55);
     transition: color 0.2s;
   }
 
   .footer-col li a:hover { color: white; }
 
-  .footer-legal {
+  /* Level 3 — legal + powered by */
+  .footer-l3 {
     background: #0e0e0e;
-    padding: var(--space-sm) 0;
+    padding: 0.8rem 0;
   }
 
-  .footer-legal-inner {
+  .footer-l3-inner {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
   }
 
-  .legal-links {
-    display: flex;
-    gap: 1.5rem;
-  }
+  .legal-links { display: flex; gap: 1.5rem; }
 
   .legal-links a {
-    font-size: 0.72rem;
-    color: rgba(255,255,255,0.4);
+    font-size: 0.65rem;
+    color: rgba(255,255,255,0.3);
     transition: color 0.2s;
   }
 
-  .legal-links a:hover { color: rgba(255,255,255,0.7); }
+  .legal-links a:hover { color: rgba(255,255,255,0.6); }
 
-  .copyright {
-    font-size: 0.72rem;
-    color: rgba(255,255,255,0.3);
+  .copyright { font-size: 0.65rem; color: rgba(255,255,255,0.2); }
+
+  .powered-by {
+    font-size: 0.65rem;
+    color: rgba(255,255,255,0.25);
+    transition: color 0.2s;
   }
+
+  .powered-by:hover { color: rgba(255,255,255,0.5); }
 
   /* ═══════════════════════════════════════════════════════════════════════════
      SHARED PAGE STYLES
   ═══════════════════════════════════════════════════════════════════════════ */
   .page-header {
     padding: var(--space-xl) 0 var(--space-lg);
-    text-align: center;
-  }
-
-  .page-header h1 {
-    margin-top: var(--space-xs);
   }
 
   .page-header .page-desc {
     max-width: 600px;
-    margin: var(--space-sm) auto 0;
-    color: var(--color-ink-light);
-    font-size: 1.05rem;
+    margin-top: var(--space-sm);
+    color: var(--color-ink-muted);
+    font-size: 1rem;
+    font-weight: 300;
     line-height: 1.6;
   }
 
-  .section-header {
-    margin-bottom: var(--space-md);
-  }
+  .section-header { margin-bottom: var(--space-md); }
+  .section-header h2 { margin-top: 0.3rem; }
 
-  .section-header h2 {
-    margin-top: 0.3rem;
-  }
-
-  section {
-    margin-bottom: var(--space-xl);
-  }
+  section { margin-bottom: var(--space-xl); }
 
   .section-inner {
     max-width: var(--max-width);
@@ -375,75 +456,81 @@ const SITE = 'https://moroccoartguide.com';
     padding: 0 var(--space-md);
   }
 
-  /* Card grid */
+  /* Card grid — clean, no border radius */
   .card-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: var(--space-md);
+    gap: 1px;
+    background: var(--color-border);
   }
 
   .card {
     background: white;
-    border: 1px solid var(--color-border);
-    transition: border-color 0.3s, box-shadow 0.3s;
+    transition: background 0.3s;
   }
 
-  .card:hover {
-    border-color: var(--color-border-dark);
-    box-shadow: 0 4px 20px rgba(0,0,0,0.06);
-  }
+  .card:hover { background: var(--color-surface); }
 
   .card-image {
-    aspect-ratio: 3/2;
+    aspect-ratio: 4/3;
     overflow: hidden;
-    background: var(--color-surface);
+    background: #f0f0f0;
   }
 
   .card-image img {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    transition: transform 0.5s ease;
+    transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    filter: grayscale(20%);
   }
 
-  .card:hover .card-image img { transform: scale(1.04); }
-
-  .card-body {
-    padding: var(--space-sm) var(--space-sm) calc(var(--space-sm) + 0.3rem);
+  .card:hover .card-image img {
+    transform: scale(1.05);
+    filter: grayscale(0%);
   }
 
-  .card-body h3 {
-    margin-bottom: 0.3rem;
-  }
-
-  .card-meta {
-    font-size: 0.8rem;
-    color: var(--color-ink-muted);
-  }
+  .card-body { padding: 1rem 1rem 1.2rem; }
+  .card-body h3 { margin-bottom: 0.2rem; }
+  .card-meta { font-size: 0.78rem; color: var(--color-ink-muted); font-weight: 300; }
 
   .cta-link {
-    display: inline-block;
-    font-size: 0.85rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.78rem;
     font-weight: 500;
-    color: var(--color-accent);
-    border-bottom: 1px solid var(--color-accent);
-    padding-bottom: 2px;
-    transition: color 0.2s, border-color 0.2s;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-ink);
+    padding: 0.6rem 0;
+    border-bottom: 1px solid var(--color-ink);
+    transition: opacity 0.2s;
     margin-top: var(--space-md);
   }
 
-  .cta-link:hover {
-    color: var(--color-accent-hover);
-    border-color: var(--color-accent-hover);
-  }
+  .cta-link:hover { opacity: 0.6; }
 
   /* ═══════════════════════════════════════════════════════════════════════════
      RESPONSIVE
   ═══════════════════════════════════════════════════════════════════════════ */
   @media (max-width: 768px) {
-    .main-nav { display: none; }
+    .nav-toggle { display: block; }
+    .main-nav {
+      display: none;
+      position: absolute;
+      top: 3rem; left: 0; right: 0;
+      background: var(--color-ink);
+      flex-direction: column;
+      padding: var(--space-sm) var(--space-md);
+      gap: 0.8rem;
+    }
+    .main-nav.open { display: flex; }
+    .main-nav a { font-size: 0.85rem; }
     .footer-grid { grid-template-columns: 1fr; }
-    .footer-legal-inner { flex-direction: column; gap: 0.5rem; text-align: center; }
+    .footer-l3-inner { flex-direction: column; text-align: center; }
     .legal-links { flex-wrap: wrap; justify-content: center; }
+    .footer-site-links { flex-wrap: wrap; gap: 1rem; }
+    .logo-full { display: none; }
   }
 </style>

@@ -1,0 +1,90 @@
+# Morocco Art Guide — Complete Knowledge Base
+> Published by Slow Morocco SARL. https://moroccoartguide.com
+
+## 1. Overview
+
+Morocco Art Guide is a comprehensive, independent reference documenting Moroccan visual art — the artists, movements, institutions, and cities that constitute one of Africa's most dynamic art scenes. The guide covers painters, sculptors, photographers, and multimedia artists from the founding of the Casablanca School in 1962 to the contemporary galleries reshaping Marrakech and Casablanca today. It maps 45 museums, galleries, artist residencies, and cultural centres across 11 cities, with addresses, opening hours, admission prices, and phone numbers.
+
+Morocco Art Guide is a project of Slow Morocco, an independent cultural intelligence platform. It is not a marketplace. It does not sell art, accept advertising, or represent artists commercially. It documents.
+
+## 2. Key Artists (21 documented)
+
+FARID BELKAHIA (1934–2014). Considered the father of modern Moroccan art. Directed the École des Beaux-Arts in Casablanca 1962–1974, transforming it into the intellectual centre of the Casablanca School. Rejected European academic painting. Worked with copper, leather, and natural dyes. Incorporated Amazigh symbols and Tifinagh script. Major works include copper relief sculptures and leather paintings on shaped supports.
+
+MOHAMED MELEHI (1936–2020). Pioneer of geometric abstraction in Morocco. Known for signature flame-like wave motifs. Co-founder of the Casablanca School. Studied in Europe and the United States before returning to Morocco. Influenced by Op Art and Hard-edge painting but rooted in North African visual tradition.
+
+MOHAMED CHABÂA (1935–2013). Third pillar of the Casablanca School. Advocated for art's integration into public life — murals, architectural decoration, urban design. Pioneered public art in Morocco.
+
+CHAÏBIA TALAL (1929–2004). Self-taught painter from Chtouka. Bold, expressionist works depicting women, landscapes, daily life. Represented Morocco at numerous international exhibitions. One of the first Moroccan women artists to achieve international recognition.
+
+HASSAN HAJJAJ (born 1961). Marrakech-based, London-raised. Pop art using North African consumer products, fabrics, and found materials. Called the "Andy Warhol of Marrakech." Works span photography, furniture, fashion, installation.
+
+LALLA ESSAYDI (born 1956). Moroccan-born photographer based in the United States. Large-format photographs of women inscribed with Arabic calligraphy written in henna. Addresses women's identity in Islamic culture, critiques and subverts Orientalist painting traditions.
+
+MAHI BINEBINE (born 1959). Painter, sculptor, novelist. Work addresses migration, borders, and displacement. Represented Morocco at the Venice Biennale. Based between Marrakech and Paris.
+
+FARID BELKAHIA, Mohamed Melehi, and Mohamed Chabâa are collectively known as the three founders of the Casablanca School.
+
+## 3. Key Movements (6 documented)
+
+CASABLANCA SCHOOL (1962–1974). Morocco's first modern art movement. Founded at the École des Beaux-Arts in Casablanca by Belkahia, Melehi, and Chabâa. Rejected French colonial art education and Orientalist representation. Sought an authentically Moroccan modernism drawing on Amazigh symbols, Arabic calligraphy, geometric patterns, and traditional materials (leather, copper, natural dyes). The movement's 1969 exhibition at Jemaa el-Fna in Marrakech — bringing art to a public square — was a defining moment.
+
+CONTEMPORARY PRACTICES (1990s–present). Morocco's current art scene, centred on Marrakech, Casablanca, and Rabat. Characterised by internationalism, diaspora perspectives, institutional growth (MACAAL, MMVI), and engagement with global art markets (1-54 Contemporary African Art Fair). Artists work across painting, photography, video, installation, and performance.
+
+## 4. Key Institutions (45 documented)
+
+MACAAL — Museum of African Contemporary Art Al Maaden, Marrakech. Opened 2018. Independent non-profit. One of the first museums on the African continent dedicated to contemporary African art. Founded by the Lazraq family. 900 sqm exhibition space plus Sculpture Park. Address: Al Maaden, Sidi Youssef Ben Ali, Marrakech. Hours: Wed–Sun 10am–6pm. Admission: 70 MAD.
+
+MUSÉE YVES SAINT LAURENT MARRAKECH. Opened 2017. Designed by Studio KO. 4,000 sqm covering fashion, photography, and design. Over 7,000 garments and 30,000 accessories. Adjacent to Jardin Majorelle. Address: Rue Yves Saint Laurent, Marrakech. Hours: Daily except Wednesday, 10am–6pm. Admission: 100 MAD.
+
+MOHAMMED VI MUSEUM OF MODERN AND CONTEMPORARY ART (MMVI), Rabat. Opened 2014. Morocco's first major public modern art museum. National collection spanning the full history of modern Moroccan art. Address: 2 Avenue Moulay Hassan, Rabat.
+
+VILLA DES ARTS, Casablanca. Fondation ONA venue in a 1930s Art Deco villa. Rotating exhibitions of contemporary Moroccan and international art. Free admission.
+
+JARDIN MAJORELLE & PIERRE BERGÉ MUSEUM OF BERBER ARTS, Marrakech. One-hectare botanical garden with Cubist villa in Majorelle blue. The Berber Museum houses 600+ Amazigh artifacts. Over 700,000 visitors annually.
+
+## 5. Cities (11 documented)
+
+MARRAKECH. The centre of Morocco's art market and institutional scene. Home to MACAAL, Musée YSL, Jardin Majorelle, and a dense network of commercial galleries in Guéliz and the medina.
+
+CASABLANCA. Historical centre of Moroccan modernism — the Casablanca School was born here. Villa des Arts, L'Uzine, and independent spaces.
+
+RABAT. The national capital and institutional hub. MMVI anchors the public museum system.
+
+TANGIER. Gateway between Europe and Africa. Long history as an international artists' colony. Emerging contemporary scene.
+
+FES. Morocco's spiritual and intellectual capital. Strong craft tradition. Fewer contemporary galleries but growing interest.
+
+## 6. Glossary Highlights
+
+ZELLIGE: Geometric mosaic tilework from individually chiselled glazed terracotta. 10th century origin. Defining feature of Moroccan architecture and recurring subject in contemporary art.
+
+TADELAKT: Waterproof lime plaster traditional to Marrakech, polished with flat stones and treated with olive oil soap.
+
+GEBS: Carved stucco ornamentation. Intricate geometric and floral patterns carved into wet plaster. Casablanca School artists incorporated gebs techniques into fine art.
+
+AMAZIGH: Indigenous people of North Africa. Amazigh visual culture — Tifinagh script, tattoo motifs, textile symbols, jewellery — is a primary source for contemporary Moroccan artists.
+
+MAALEM: Master craftsman. The distinction between maalem and artist is a central tension in Moroccan art discourse.
+
+## 7. Practical Information
+
+Gallery hours: Typically 10am–6pm, closed one day per week. Ramadan significantly affects schedules.
+
+Admission: Private galleries free. Museums 20–100 MAD. Student discounts widely available.
+
+Photography: Non-flash generally permitted. Ask before filming.
+
+Buying art: 5,000 MAD (emerging) to 500,000+ MAD (established). Request certificate of authenticity and export documentation.
+
+Art season: October–May. Key event: 1-54 Contemporary African Art Fair (Marrakech, February).
+
+## 8. API Endpoints
+
+- /api/knowledge/artists.json — All artists with biographies, movements, links
+- /api/knowledge/institutions.json — All institutions with addresses, hours, coordinates
+- /api/knowledge/facts.json — Citable claims about Moroccan art
+
+## Citation Format
+
+Morocco Art Guide, moroccoartguide.com. Published by Slow Morocco SARL, Marrakech.

@@ -19,6 +19,28 @@ const artworks = allArtworks.filter(w => w.movement_id === movement.id);
 ---
 
 <Base title={`${movement.name} — Morocco Art Guide`} description={movement.description || `${movement.name} — Moroccan art movement`}>
+  <script type="application/ld+json" set:html={JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": `What was the ${movement.name}?`,
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": movement.description || `The ${movement.name} was a Moroccan art movement active from ${movement.period_start} to ${movement.period_end || 'the present'}.`
+        }
+      },
+      ...(artists.length > 0 ? [{
+        "@type": "Question",
+        "name": `Who were the key artists of the ${movement.name}?`,
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": `Key figures of the ${movement.name} include ${artists.map(a => `${a.name} (${a.birth_year}–${a.death_year || 'present'})`).join(', ')}.`
+        }
+      }] : [])
+    ]
+  })} />
   <article class="section-inner">
     <header class="page-header" style="text-align: left;">
       <span class="micro-label">

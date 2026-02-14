@@ -1,0 +1,80 @@
+---
+import Base from '../layouts/Base.astro';
+
+const faqSchema = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    { "@type": "Question", "name": "Can I take photos in Moroccan art galleries?", "acceptedAnswer": { "@type": "Answer", "text": "Most Moroccan galleries allow photography without flash for personal use. Museums vary — MACAAL and the Musée Yves Saint Laurent generally permit non-flash photography. Always check at the entrance. Commercial photography typically requires prior permission." } },
+    { "@type": "Question", "name": "What are typical gallery hours in Morocco?", "acceptedAnswer": { "@type": "Answer", "text": "Most galleries and museums are open 10am–6pm. Many close one day per week — often Monday or Tuesday. During Ramadan, hours shorten significantly, typically opening later and closing by mid-afternoon. Friday afternoons may see reduced hours or closures." } },
+    { "@type": "Question", "name": "Can I buy art directly from galleries in Morocco?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Commercial galleries in Casablanca, Marrakech, and Rabat sell work directly. Prices range from 5,000 MAD for emerging artists to 500,000+ MAD for established names. Always request a certificate of authenticity and export documentation." } },
+    { "@type": "Question", "name": "How do I ship artwork from Morocco?", "acceptedAnswer": { "@type": "Answer", "text": "Established galleries can arrange international shipping. For independent purchases, DHL and FedEx operate in major cities. Paintings should be removed from frames for transport. Moroccan customs requires an export declaration for artworks — galleries typically handle this. Allow 2–4 weeks for framed work." } },
+    { "@type": "Question", "name": "Is there an art season in Morocco?", "acceptedAnswer": { "@type": "Answer", "text": "The main art season runs October through May, coinciding with tourist season and the international art calendar. The 1-54 Contemporary African Art Fair (Marrakech, February) and the Marrakech Biennale are the major events. Summer months (June–August) see reduced programming. Ramadan affects all schedules." } },
+  ]
+};
+---
+
+<Base title="Practical Tips — Visiting Art Spaces in Morocco" description="Gallery etiquette, opening hours, buying art, shipping artwork, Ramadan schedules, and practical information for visiting museums and galleries in Morocco.">
+  <script type="application/ld+json" set:html={JSON.stringify(faqSchema)} />
+
+  <div class="section-inner">
+    <div class="page-header">
+      <span class="micro-label">Practical</span>
+      <h1>Visitor Tips</h1>
+      <p class="page-desc">What to know before visiting art spaces in Morocco.</p>
+    </div>
+
+    <div class="tips-content">
+      <section class="tip-block" id="hours">
+        <h2>Opening Hours</h2>
+        <p>Most galleries and museums operate 10am–6pm, closing one day per week (often Monday or Tuesday). Private galleries may keep shorter hours or open by appointment. Friday afternoons see reduced hours at some venues. During Ramadan, expect significantly shortened schedules — openings later in the morning, closures by mid-afternoon, and some spaces shutting entirely for the month.</p>
+        <p>Always verify hours before visiting. This guide lists published hours for each space, but holiday and seasonal changes are common.</p>
+      </section>
+
+      <section class="tip-block" id="admission">
+        <h2>Admission & Prices</h2>
+        <p>Private galleries are free. Museums charge between 20–100 MAD (roughly €2–10). The Musée Yves Saint Laurent is 100 MAD; MACAAL is 70 MAD. Jardin Majorelle charges 70–180 MAD depending on the combined ticket. Student and Moroccan resident discounts are widely available. MACAAL offers discounts for African passport holders.</p>
+      </section>
+
+      <section class="tip-block" id="photography">
+        <h2>Photography</h2>
+        <p>Most galleries allow non-flash photography for personal use. Ask before shooting — some artists or temporary exhibitions may restrict photography. Video recording usually requires permission. Commercial or professional photography needs advance arrangement with the institution.</p>
+      </section>
+
+      <section class="tip-block" id="etiquette">
+        <h2>Gallery Etiquette</h2>
+        <p>Morocco is relaxed about gallery etiquette by European standards. Dress is generally casual. Do not touch artworks. In traditional spaces (fondouks, riads converted to galleries), you may be offered mint tea — accepting is a gesture of courtesy. Tipping gallery attendants is not expected but appreciated (5–10 MAD).</p>
+      </section>
+
+      <section class="tip-block" id="buying">
+        <h2>Buying Art</h2>
+        <p>Commercial galleries in Casablanca, Marrakech, and Rabat sell directly. Prices for established Moroccan artists (Melehi, Belkahia estate, Hajjaj) start around 50,000 MAD and can exceed 500,000 MAD. Emerging artists are more accessible — 5,000–30,000 MAD for paintings. Ask for a certificate of authenticity, the artist's CV, and an invoice showing the purchase price (required for insurance and resale).</p>
+        <p>Negotiation is less common in galleries than in souks, but there is flexibility for multiple purchases or loyal collectors.</p>
+      </section>
+
+      <section class="tip-block" id="shipping">
+        <h2>Shipping Artwork</h2>
+        <p>Established galleries arrange shipping as standard — ask at point of sale. For independent purchases: DHL and FedEx have offices in Marrakech, Casablanca, and Rabat. Remove paintings from frames for transport when possible. Moroccan customs requires an export declaration for artworks; galleries handle this routinely. Allow 2–4 weeks for framed or fragile work shipped by freight. Keep all receipts for customs clearance at your destination.</p>
+      </section>
+
+      <section class="tip-block" id="season">
+        <h2>Art Calendar</h2>
+        <p>October through May is the active season, aligned with tourist arrivals and the international art circuit. Key events include the 1-54 Contemporary African Art Fair (Marrakech, usually February), the Marrakech Biennale (variable schedule), and gallery openings timed to high season. Summer (June–August) sees reduced programming. Ramadan shifts everything — check dates and plan accordingly.</p>
+      </section>
+
+      <section class="tip-block" id="access">
+        <h2>Getting Around</h2>
+        <p>Within Marrakech, Casablanca, and Rabat, galleries and museums are reachable by petit taxi. In medina settings (Marrakech, Fes), expect to walk the final stretch on foot. Google Maps coordinates are reliable for major institutions. This guide provides GPS coordinates and a map for all documented spaces.</p>
+        <p>Between cities, the Al Boraq high-speed train connects Casablanca and Tangier via Rabat in 2 hours. Casablanca to Marrakech is 2.5 hours by train.</p>
+      </section>
+    </div>
+  </div>
+</Base>
+
+<style>
+  .tips-content { max-width: var(--max-width-narrow); }
+  .tip-block { padding: var(--space-md) 0; border-bottom: 1px solid var(--color-border); }
+  .tip-block h2 { font-size: 1.2rem; margin-bottom: 0.5rem; }
+  .tip-block p { font-size: 0.92rem; font-weight: 300; color: var(--color-ink-light); line-height: 1.65; margin-bottom: 0.6rem; }
+  .tip-block p:last-child { margin-bottom: 0; }
+</style>

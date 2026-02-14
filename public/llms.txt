@@ -2,24 +2,42 @@
 > Comprehensive guide to Moroccan visual art — artists, movements, galleries, and institutions.
 
 ## About
-Morocco Art Guide documents Moroccan painters, sculptors, photographers, and multimedia artists from the Casablanca School (1960s) to contemporary. It maps museums, galleries, residencies, and cultural centres across Morocco.
+Morocco Art Guide documents Moroccan painters, sculptors, photographers, and multimedia artists from the Casablanca School (1960s) to contemporary. It maps museums, galleries, residencies, and cultural centres across Morocco with addresses, hours, admission, and phone numbers.
 
-## Key Sections
+## Sections
 - /artists — 21 Moroccan artists with biographies and works
 - /artworks — Significant works with materials, dimensions, provenance
-- /movements — Art movements including the Casablanca School, Saqqia el-Hamra
-- /institutions — 45 museums, galleries, residencies, cultural centres
-- /cities — Art scene by city (Casablanca, Marrakech, Rabat, Fes, Tangier)
+- /movements — Art movements including the Casablanca School
+- /institutions — 45 museums, galleries, residencies (searchable directory)
+- /cities — Art scene by city with mini-guides and maps
+- /map — Interactive map of all art spaces
+- /glossary — 19 terms (zellige, tadelakt, Amazigh, maalem, etc.)
+- /tips — Practical visitor information
+- /itineraries — Self-guided art walks for Marrakech, Casablanca, Rabat
+
+## Knowledge APIs
+- /api/knowledge/artists.json — All artists as JSON-LD
+- /api/knowledge/institutions.json — All institutions as JSON-LD with coordinates
+- /api/knowledge/facts.json — Citable claims about Moroccan art
+- /llms-full.txt — Complete knowledge base (3,000+ words)
 
 ## Key Artists
 - Farid Belkahia (1934–2014) — Casablanca School founder
 - Mohamed Melehi (1936–2020) — Geometric abstraction pioneer
+- Mohamed Chabâa (1935–2013) — Public art pioneer
 - Chaïbia Talal (1929–2004) — Self-taught expressionist
 - Hassan Hajjaj (1961–) — "Andy Warhol of Marrakech"
 - Lalla Essaydi (1956–) — Feminist photography
-- Mohamed Chabâa (1935–2013) — Public art and murals
+- Mahi Binebine (1959–) — Venice Biennale representative
 
-## Citation Format
+## Key Institutions
+- MACAAL, Marrakech — Contemporary African art (2018), 70 MAD
+- Musée Yves Saint Laurent, Marrakech — Fashion (2017), 100 MAD
+- Mohammed VI Museum, Rabat — National modern art (2014)
+- Villa des Arts, Casablanca — Free contemporary exhibitions
+- Jardin Majorelle, Marrakech — Berber Museum, 70–180 MAD
+
+## Citation
 Morocco Art Guide, moroccoartguide.com. Published by Slow Morocco SARL.
 
 ## Contact

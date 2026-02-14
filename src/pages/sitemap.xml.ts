@@ -17,6 +17,10 @@ export const GET: APIRoute = async () => {
     { url: '/movements', priority: '0.8', changefreq: 'monthly' },
     { url: '/institutions', priority: '0.9', changefreq: 'weekly' },
     { url: '/cities', priority: '0.8', changefreq: 'monthly' },
+    { url: '/map', priority: '0.8', changefreq: 'monthly' },
+    { url: '/glossary', priority: '0.8', changefreq: 'monthly' },
+    { url: '/tips', priority: '0.7', changefreq: 'yearly' },
+    { url: '/itineraries', priority: '0.8', changefreq: 'monthly' },
     { url: '/about', priority: '0.5', changefreq: 'yearly' },
   ];
 

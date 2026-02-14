@@ -1,0 +1,282 @@
+---
+import Base from '../layouts/Base.astro';
+import { getInstitutions } from '../lib/supabase';
+const institutions = await getInstitutions();
+const withCoords = institutions.filter(i => i.latitude && i.longitude);
+
+const types = [...new Set(withCoords.map(i => i.type).filter(Boolean))];
+const typeCounts: Record<string, number> = {};
+withCoords.forEach(i => { if (i.type) typeCounts[i.type] = (typeCounts[i.type] || 0) + 1; });
+
+const markersData = withCoords.map(i => ({
+  slug: i.slug,
+  name: i.name,
+  type: i.type || 'OTHER',
+  lat: i.latitude,
+  lng: i.longitude,
+  desc: i.description?.slice(0, 80) || '',
+}));
+---
+
+<Base title="Art Map of Morocco — Museums, Galleries & Spaces" description={`${withCoords.length} art spaces mapped across Morocco — museums, galleries, residencies and cultural centres.`}>
+  <div class="map-page">
+    <div class="map-header">
+      <div class="container">
+        <div class="map-header__top">
+          <div>
+            <span class="micro-label">{withCoords.length} Locations</span>
+            <h1>Art Map</h1>
+          </div>
+        </div>
+        <div class="map-filters" id="map-filters">
+          <button class="filter-btn active" data-type="ALL">
+            All <span class="filter-count">{withCoords.length}</span>
+          </button>
+          {types.map(t => {
+            const label = t === 'MUSEUM' ? 'Museums' : t === 'GALLERY' ? 'Galleries' : t === 'CULTURAL_CENTER' ? 'Cultural Centres' : t === 'RESIDENCY' ? 'Residencies' : t === 'FOUNDATION' ? 'Foundations' : t === 'ARTS_CENTER' ? 'Arts Centres' : t!;
+            return (
+              <button class="filter-btn" data-type={t}>
+                {label} <span class="filter-count">{typeCounts[t!]}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+    <div id="map-container"></div>
+    <div class="map-legend" id="map-legend">
+      <div class="legend-item"><span class="legend-dot" style="background:#ffffff;"></span> Museum</div>
+      <div class="legend-item"><span class="legend-dot" style="background:#c23b22;"></span> Gallery</div>
+      <div class="legend-item"><span class="legend-dot" style="background:#4a9eff;"></span> Cultural Centre</div>
+      <div class="legend-item"><span class="legend-dot" style="background:#22c273;"></span> Residency</div>
+      <div class="legend-item"><span class="legend-dot" style="background:#f0c040;"></span> Foundation</div>
+      <div class="legend-item"><span class="legend-dot" style="background:#b060e0;"></span> Arts Centre</div>
+    </div>
+  </div>
+</Base>
+
+<link href="https://api.mapbox.com/mapbox-gl-js/v3.9.0/mapbox-gl.css" rel="stylesheet">
+<script src="https://api.mapbox.com/mapbox-gl-js/v3.9.0/mapbox-gl.js"></script>
+
+<script define:vars={{ markersData, mapboxToken: import.meta.env.PUBLIC_MAPBOX_TOKEN || '' }}>
+  document.addEventListener('DOMContentLoaded', () => {
+    mapboxgl.accessToken = mapboxToken;
+
+    const map = new mapboxgl.Map({
+      container: 'map-container',
+      style: 'mapbox://styles/mapbox/dark-v11',
+      center: [-6.5, 31.8],
+      zoom: 5.5,
+      attributionControl: false,
+    });
+
+    map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), 'top-right');
+
+    const typeColors = {
+      'MUSEUM': '#ffffff',
+      'GALLERY': '#c23b22',
+      'CULTURAL_CENTER': '#4a9eff',
+      'RESIDENCY': '#22c273',
+      'FOUNDATION': '#f0c040',
+      'ARTS_CENTER': '#b060e0',
+    };
+
+    const markers = [];
+    let activeFilter = 'ALL';
+
+    function createMarkers() {
+      // Clear existing
+      markers.forEach(({ marker }) => marker.remove());
+      markers.length = 0;
+
+      markersData.forEach(m => {
+        const color = typeColors[m.type] || '#ffffff';
+
+        const el = document.createElement('div');
+        el.style.width = '10px';
+        el.style.height = '10px';
+        el.style.backgroundColor = color;
+        el.style.borderRadius = '50%';
+        el.style.border = '2px solid rgba(255,255,255,0.3)';
+        el.style.cursor = 'pointer';
+        el.style.transition = 'transform 0.2s, box-shadow 0.2s';
+        el.style.display = (activeFilter === 'ALL' || activeFilter === m.type) ? 'block' : 'none';
+
+        el.addEventListener('mouseenter', () => {
+          el.style.transform = 'scale(2)';
+          el.style.boxShadow = '0 0 12px ' + color;
+        });
+        el.addEventListener('mouseleave', () => {
+          el.style.transform = 'scale(1)';
+          el.style.boxShadow = 'none';
+        });
+
+        const typeLabel = m.type.replace(/_/g, ' ');
+        const popup = new mapboxgl.Popup({
+          offset: 14,
+          closeButton: false,
+          className: 'mag-popup',
+        }).setHTML(
+          '<div style="font-family: Inter, sans-serif;">' +
+            '<div style="font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: #888; margin-bottom: 4px;">' + typeLabel + '</div>' +
+            '<a href="/institutions/' + m.slug + '" style="font-size: 13px; font-weight: 500; color: #0a0a0a; text-decoration: none;">' + m.name + '</a>' +
+            (m.desc ? '<div style="font-size: 11px; color: #666; margin-top: 3px; line-height: 1.3;">' + m.desc + '</div>' : '') +
+          '</div>'
+        );
+
+        const marker = new mapboxgl.Marker({ element: el, anchor: 'center' })
+          .setLngLat([m.lng, m.lat])
+          .setPopup(popup)
+          .addTo(map);
+
+        markers.push({ marker, el, type: m.type });
+      });
+    }
+
+    map.on('load', () => {
+      createMarkers();
+    });
+
+    // Filter buttons
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        activeFilter = btn.dataset.type;
+
+        markers.forEach(({ el, type }) => {
+          el.style.display = (activeFilter === 'ALL' || activeFilter === type) ? 'block' : 'none';
+        });
+
+        // If filtering to a specific type, fit bounds to those markers
+        if (activeFilter !== 'ALL') {
+          const filtered = markersData.filter(m => m.type === activeFilter);
+          if (filtered.length > 1) {
+            const bounds = new mapboxgl.LngLatBounds();
+            filtered.forEach(m => bounds.extend([m.lng, m.lat]));
+            map.fitBounds(bounds, { padding: 80, duration: 1000 });
+          } else if (filtered.length === 1) {
+            map.flyTo({ center: [filtered[0].lng, filtered[0].lat], zoom: 10, duration: 1000 });
+          }
+        } else {
+          map.flyTo({ center: [-6.5, 31.8], zoom: 5.5, duration: 1000 });
+        }
+      });
+    });
+  });
+</script>
+
+<style>
+  .map-page {
+    display: flex;
+    flex-direction: column;
+    min-height: calc(100vh - 3rem);
+    position: relative;
+  }
+
+  .map-header {
+    background: var(--color-ink);
+    color: white;
+    padding: var(--space-sm) 0;
+  }
+
+  .map-header__top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+  }
+
+  .map-header h1 {
+    font-size: clamp(1.4rem, 3vw, 2rem);
+    margin-top: 0.15rem;
+  }
+
+  .map-filters {
+    display: flex;
+    gap: 0.4rem;
+    margin-top: 0.8rem;
+    flex-wrap: wrap;
+  }
+
+  .filter-btn {
+    font-family: var(--font-body);
+    font-size: 0.68rem;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    padding: 0.35rem 0.7rem;
+    background: transparent;
+    color: rgba(255,255,255,0.4);
+    border: 1px solid rgba(255,255,255,0.15);
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .filter-btn:hover {
+    color: rgba(255,255,255,0.8);
+    border-color: rgba(255,255,255,0.3);
+  }
+
+  .filter-btn.active {
+    color: white;
+    background: rgba(255,255,255,0.1);
+    border-color: rgba(255,255,255,0.4);
+  }
+
+  .filter-count {
+    font-size: 0.6rem;
+    opacity: 0.5;
+  }
+
+  #map-container {
+    flex: 1;
+    min-height: 600px;
+  }
+
+  .map-legend {
+    position: absolute;
+    bottom: 1.5rem;
+    left: 1.5rem;
+    background: rgba(10,10,10,0.85);
+    backdrop-filter: blur(8px);
+    padding: 0.8rem 1rem;
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    z-index: 10;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.65rem;
+    color: rgba(255,255,255,0.6);
+    letter-spacing: 0.03em;
+  }
+
+  .legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  :global(.mag-popup .mapboxgl-popup-content) {
+    background: white;
+    padding: 10px 14px;
+    border-radius: 0;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    max-width: 240px;
+  }
+
+  :global(.mag-popup .mapboxgl-popup-tip) {
+    border-top-color: white;
+  }
+
+  @media (max-width: 768px) {
+    .map-legend { bottom: 0.5rem; left: 0.5rem; right: 0.5rem; gap: 0.6rem; }
+  }
+</style>

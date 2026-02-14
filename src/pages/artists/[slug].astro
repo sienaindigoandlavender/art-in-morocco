@@ -31,10 +31,42 @@ const jsonLd = {
   ...(artist.website_url && { "url": artist.website_url }),
   "nationality": { "@type": "Country", "name": "Morocco" }
 };
+
+const faqSchema = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": `Who is ${artist.name}?`,
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": artist.biography_short || `${artist.name} (${lifespan}) is a Moroccan artist documented by Morocco Art Guide.`
+      }
+    },
+    ...(movements.length > 0 ? [{
+      "@type": "Question",
+      "name": `What art movement is ${artist.name} associated with?`,
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": `${artist.name} is associated with ${movements.map(m => `${m.name} (${m.period_start}–${m.period_end || 'present'})`).join(', ')}.`
+      }
+    }] : []),
+    ...(artworks.length > 0 ? [{
+      "@type": "Question",
+      "name": `What are the major works of ${artist.name}?`,
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": `Notable works by ${artist.name} include ${artworks.slice(0, 5).map(w => `${w.title} (${w.year}${w.materials ? ', ' + w.materials : ''})`).join('; ')}.`
+      }
+    }] : []),
+  ]
+};
 ---
 
 <Base title={`${artist.name} — Morocco Art Guide`} description={artist.biography_short || `${artist.name}, Moroccan artist (${lifespan})`}>
   <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+  <script type="application/ld+json" set:html={JSON.stringify(faqSchema)} />
 
   <article class="section-inner artist-detail">
     <header class="artist-header">

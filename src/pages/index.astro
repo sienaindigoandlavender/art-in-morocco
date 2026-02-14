@@ -47,62 +47,56 @@ const faqSchema = {
 <Base title="Morocco Art Guide — Moroccan Artists, Galleries & Movements" settings={settings}>
   <script type="application/ld+json" set:html={JSON.stringify(faqSchema)} />
 
-  <!-- Hero -->
+  <!-- Hero — full black, massive type -->
   <section class="hero" slot="hero">
-    <div class="container hero-content">
-      <span class="micro-label">A Living Archive</span>
-      <h1>Morocco<br>Art Guide</h1>
-      <p class="hero-subtitle">
-        {artists.length} artists. {movements.length} movements. {institutions.length} places to see art.<br>
-        From the Casablanca School to the galleries of tomorrow.
-      </p>
-      <div class="hero-stats">
-        <div class="stat"><span class="stat-num">{artists.length}</span><span class="stat-label">Artists</span></div>
-        <div class="stat"><span class="stat-num">{artworks.length}</span><span class="stat-label">Works</span></div>
-        <div class="stat"><span class="stat-num">{institutions.length}</span><span class="stat-label">Spaces</span></div>
-        <div class="stat"><span class="stat-num">{cities.length}</span><span class="stat-label">Cities</span></div>
+    <div class="hero-inner">
+      <div class="hero-text">
+        <h1>Morocco<br><em>Art Guide</em></h1>
+        <p class="hero-sub">
+          {artists.length} artists · {movements.length} movements · {institutions.length} spaces · {cities.length} cities
+        </p>
+      </div>
+      <div class="hero-aside">
+        <p>From the Casablanca School to the galleries of tomorrow — a complete guide to Moroccan visual art.</p>
+        <a href="/artists" class="hero-cta">Explore artists →</a>
       </div>
     </div>
   </section>
 
-  <!-- Movements -->
-  <section class="section-inner">
-    <div class="section-header">
+  <!-- Movements — horizontal scroll -->
+  <section class="movements-band">
+    <div class="section-inner">
       <span class="micro-label">Movements</span>
-      <h2>The Arc of Moroccan Art</h2>
     </div>
-    <div class="movements-row">
-      {movements.map(m => (
-        <a href={`/movements/${m.slug}`} class="movement-card">
-          <span class="movement-dates">
-            {m.period_start}{m.period_end ? `–${m.period_end}` : '–present'}
-          </span>
+    <div class="movements-scroll">
+      {movements.map((m, i) => (
+        <a href={`/movements/${m.slug}`} class="mv-card">
+          <span class="mv-num">{String(i + 1).padStart(2, '0')}</span>
+          <span class="mv-dates">{m.period_start}–{m.period_end || 'now'}</span>
           <h3>{m.name}</h3>
-          {m.name_ar && <span class="movement-ar">{m.name_ar}</span>}
-          <p>{m.description?.slice(0, 120)}{m.description && m.description.length > 120 ? '…' : ''}</p>
+          {m.name_ar && <span class="mv-ar">{m.name_ar}</span>}
+          <p>{m.description?.slice(0, 100)}{m.description && m.description.length > 100 ? '…' : ''}</p>
         </a>
       ))}
     </div>
   </section>
 
-  <!-- Featured Artists -->
+  <!-- Artists — staggered grid -->
   <section class="section-inner">
-    <div class="section-header">
+    <div class="artists-header">
       <span class="micro-label">Artists</span>
-      <h2>Voices That Shaped a Nation</h2>
+      <h2>Key Figures</h2>
     </div>
-    <div class="card-grid">
-      {artists.slice(0, 8).map(artist => (
-        <a href={`/artists/${artist.slug}`} class="card">
-          <div class="card-image">
-            {artist.photo_url && <img src={artist.photo_url} alt={artist.name} loading="lazy" />}
+    <div class="artists-stagger">
+      {artists.slice(0, 9).map((a, i) => (
+        <a href={`/artists/${a.slug}`} class={`artist-tile ${i % 3 === 1 ? 'artist-tile--push' : ''}`}>
+          <div class="artist-tile__img">
+            {a.photo_url && <img src={a.photo_url} alt={a.name} loading="lazy" />}
           </div>
-          <div class="card-body">
-            <span class="micro-label">
-              {artist.birth_year}{artist.death_year ? `–${artist.death_year}` : '–present'}
-            </span>
-            <h3>{artist.name}</h3>
-            {artist.name_ar && <span class="card-meta">{artist.name_ar}</span>}
+          <div class="artist-tile__info">
+            <span class="artist-tile__years">{a.birth_year}–{a.death_year || ''}</span>
+            <h3>{a.name}</h3>
+            {a.biography_short && <p>{a.biography_short.slice(0, 80)}…</p>}
           </div>
         </a>
       ))}
@@ -112,215 +106,319 @@ const faqSchema = {
     </div>
   </section>
 
-  <!-- Institutions -->
-  <section class="institutions-section">
+  <!-- Institutions — dark band -->
+  <section class="inst-band">
     <div class="section-inner">
-      <div class="section-header">
-        <span class="micro-label">Where to See Art</span>
-        <h2>Spaces</h2>
+      <div class="inst-header">
+        <div>
+          <span class="micro-label" style="color: rgba(255,255,255,0.4);">Where to See Art</span>
+          <h2>{institutions.length} Spaces</h2>
+        </div>
+        <a href="/institutions" class="cta-link" style="border-color: rgba(255,255,255,0.3); color: white;">View all →</a>
       </div>
-      <div class="inst-grid">
-        {institutions.filter(i => i.description).slice(0, 6).map(inst => (
-          <a href={`/institutions/${inst.slug}`} class="inst-card">
-            <div class="inst-type">{inst.type}</div>
+      <div class="inst-row">
+        {institutions.filter(i => i.description).slice(0, 4).map(inst => (
+          <a href={`/institutions/${inst.slug}`} class="inst-item">
+            <span class="inst-item__type">{inst.type}</span>
             <h3>{inst.name}</h3>
-            <p>{inst.description?.slice(0, 100)}…</p>
-            {inst.year_established && <span class="inst-year">Est. {inst.year_established}</span>}
+            <p>{inst.description?.slice(0, 90)}…</p>
           </a>
         ))}
-      </div>
-      <div style="text-align: center;">
-        <a href="/institutions" class="cta-link">All {institutions.length} spaces →</a>
       </div>
     </div>
   </section>
 
-  <!-- Cities -->
+  <!-- Cities — minimal list -->
   <section class="section-inner">
-    <div class="section-header">
-      <span class="micro-label">Geography</span>
-      <h2>Art by City</h2>
-    </div>
-    <div class="cities-row">
+    <span class="micro-label">Cities</span>
+    <h2 style="margin-top: 0.3rem; margin-bottom: var(--space-md);">Art by City</h2>
+    <div class="city-list">
       {cities.map(city => (
-        <a href={`/cities/${city.slug}`} class="city-chip">
-          <span class="city-name">{city.name}</span>
-          {city.name_ar && <span class="city-ar">{city.name_ar}</span>}
+        <a href={`/cities/${city.slug}`} class="city-row">
+          <span class="city-row__name">{city.name}</span>
+          {city.name_ar && <span class="city-row__ar">{city.name_ar}</span>}
+          <span class="city-row__desc">{city.description || ''}</span>
+          <span class="city-row__arrow">→</span>
         </a>
       ))}
+    </div>
+  </section>
+
+  <!-- Map link -->
+  <section class="map-cta-band">
+    <div class="section-inner" style="text-align: center;">
+      <h2>Explore the Map</h2>
+      <p>Museums, galleries, and art spaces across Morocco</p>
+      <a href="/map" class="cta-link" style="display: inline-flex;">Open map →</a>
     </div>
   </section>
 </Base>
 
 <style>
+  /* HERO */
   .hero {
+    background: var(--color-ink);
+    color: white;
     padding: var(--space-2xl) 0 var(--space-xl);
-    background: var(--color-dark-bg);
-    color: var(--color-dark-text);
   }
 
-  .hero-content { max-width: 720px; }
-
-  .hero .micro-label { color: var(--color-accent); }
+  .hero-inner {
+    max-width: var(--max-width);
+    margin: 0 auto;
+    padding: 0 var(--space-md);
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    gap: var(--space-xl);
+    align-items: end;
+  }
 
   .hero h1 {
-    margin-top: var(--space-xs);
-    font-size: clamp(3rem, 7vw, 5rem);
-    line-height: 1.0;
-    color: white;
+    font-size: clamp(3.5rem, 8vw, 7rem);
+    line-height: 0.95;
+    letter-spacing: -0.03em;
   }
 
-  .hero-subtitle {
+  .hero h1 em {
+    font-style: italic;
+    color: rgba(255,255,255,0.6);
+  }
+
+  .hero-sub {
     margin-top: var(--space-md);
-    font-size: 1.1rem;
-    color: var(--color-dark-muted);
-    line-height: 1.6;
-  }
-
-  .hero-stats {
-    display: flex;
-    gap: var(--space-lg);
-    margin-top: var(--space-lg);
-    padding-top: var(--space-md);
-    border-top: 1px solid rgba(255,255,255,0.1);
-  }
-
-  .stat-num {
-    display: block;
-    font-family: var(--font-display);
-    font-size: 2rem;
-    color: white;
-  }
-
-  .stat-label {
-    font-size: 0.72rem;
-    font-weight: 600;
-    letter-spacing: 0.1em;
+    font-size: 0.78rem;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: var(--color-dark-muted);
+    color: rgba(255,255,255,0.35);
   }
 
-  /* Movements */
-  .movements-row {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  .hero-aside p {
+    font-size: 1rem;
+    font-weight: 300;
+    color: rgba(255,255,255,0.6);
+    line-height: 1.6;
+    margin-bottom: var(--space-sm);
+  }
+
+  .hero-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.78rem;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: white;
+    padding-bottom: 0.3rem;
+    border-bottom: 1px solid rgba(255,255,255,0.4);
+    transition: opacity 0.2s;
+  }
+
+  .hero-cta:hover { opacity: 0.7; }
+
+  /* MOVEMENTS — horizontal scroll */
+  .movements-band {
+    padding: var(--space-lg) 0;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .movements-scroll {
+    display: flex;
     gap: 1px;
-    background: var(--color-border);
-    border: 1px solid var(--color-border);
+    overflow-x: auto;
+    padding: var(--space-sm) var(--space-md) 0;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
   }
 
-  .movement-card {
-    background: white;
+  .movements-scroll::-webkit-scrollbar { display: none; }
+
+  .mv-card {
+    flex: 0 0 260px;
     padding: var(--space-md);
+    border: 1px solid var(--color-border);
     transition: background 0.3s;
   }
 
-  .movement-card:hover { background: var(--color-surface); }
+  .mv-card:hover { background: var(--color-surface); }
 
-  .movement-dates {
-    font-size: 0.75rem;
+  .mv-num {
+    font-size: 0.6rem;
     font-weight: 600;
-    letter-spacing: 0.06em;
-    color: var(--color-accent);
-  }
-
-  .movement-card h3 {
-    margin: 0.3rem 0;
-    font-size: 1.15rem;
-  }
-
-  .movement-ar {
+    letter-spacing: 0.15em;
+    color: var(--color-ink-muted);
     display: block;
-    font-size: 0.9rem;
+    margin-bottom: 0.3rem;
+  }
+
+  .mv-dates {
+    font-size: 0.68rem;
+    font-weight: 500;
+    color: var(--color-ink-muted);
+  }
+
+  .mv-card h3 { font-size: 1.15rem; margin: 0.3rem 0 0.2rem; }
+
+  .mv-ar {
+    display: block;
+    font-size: 0.85rem;
     color: var(--color-ink-muted);
     direction: rtl;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.4rem;
   }
 
-  .movement-card p {
-    font-size: 0.82rem;
-    color: var(--color-ink-light);
+  .mv-card p {
+    font-size: 0.78rem;
+    color: var(--color-ink-muted);
     line-height: 1.5;
+    font-weight: 300;
   }
 
-  /* Institutions */
-  .institutions-section {
-    background: var(--color-surface);
+  /* ARTISTS — staggered */
+  .artists-header { margin-bottom: var(--space-md); }
+  .artists-header h2 { margin-top: 0.3rem; }
+
+  .artists-stagger {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: var(--color-border);
+  }
+
+  .artist-tile {
+    background: white;
+    overflow: hidden;
+    transition: background 0.3s;
+  }
+
+  .artist-tile:hover { background: var(--color-surface); }
+
+  .artist-tile--push { margin-top: var(--space-lg); }
+
+  .artist-tile__img {
+    aspect-ratio: 1;
+    overflow: hidden;
+    background: #eee;
+  }
+
+  .artist-tile__img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: grayscale(40%);
+    transition: filter 0.5s, transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .artist-tile:hover .artist-tile__img img {
+    filter: grayscale(0%);
+    transform: scale(1.04);
+  }
+
+  .artist-tile__info { padding: 1rem; }
+
+  .artist-tile__years {
+    font-size: 0.65rem;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    color: var(--color-ink-muted);
+  }
+
+  .artist-tile__info h3 { margin: 0.2rem 0; }
+
+  .artist-tile__info p {
+    font-size: 0.78rem;
+    font-weight: 300;
+    color: var(--color-ink-muted);
+    line-height: 1.4;
+  }
+
+  /* INSTITUTIONS — dark */
+  .inst-band {
+    background: var(--color-ink);
+    color: white;
     padding: var(--space-xl) 0;
   }
 
-  .inst-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    gap: var(--space-sm);
+  .inst-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: var(--space-md);
   }
 
-  .inst-card {
-    background: white;
+  .inst-header h2 { margin-top: 0.3rem; }
+
+  .inst-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+  }
+
+  .inst-item {
     padding: var(--space-md);
-    border: 1px solid var(--color-border);
+    border: 1px solid rgba(255,255,255,0.1);
     transition: border-color 0.3s;
   }
 
-  .inst-card:hover { border-color: var(--color-accent); }
+  .inst-item:hover { border-color: rgba(255,255,255,0.3); }
 
-  .inst-type {
-    font-size: 0.65rem;
+  .inst-item__type {
+    font-size: 0.6rem;
     font-weight: 600;
-    letter-spacing: 0.12em;
+    letter-spacing: 0.14em;
     text-transform: uppercase;
-    color: var(--color-accent);
+    color: rgba(255,255,255,0.3);
+    display: block;
     margin-bottom: 0.5rem;
   }
 
-  .inst-card h3 { font-size: 1.1rem; margin-bottom: 0.5rem; }
+  .inst-item h3 { font-size: 1rem; margin-bottom: 0.4rem; }
 
-  .inst-card p {
-    font-size: 0.85rem;
-    color: var(--color-ink-light);
-    line-height: 1.5;
+  .inst-item p {
+    font-size: 0.78rem;
+    font-weight: 300;
+    color: rgba(255,255,255,0.5);
+    line-height: 1.4;
   }
 
-  .inst-year {
-    display: block;
-    margin-top: 0.5rem;
-    font-size: 0.75rem;
+  /* CITIES — list rows */
+  .city-list { border-top: 1px solid var(--color-border); }
+
+  .city-row {
+    display: grid;
+    grid-template-columns: 160px 100px 1fr 30px;
+    align-items: center;
+    padding: 0.8rem 0;
+    border-bottom: 1px solid var(--color-border);
+    transition: padding-left 0.2s;
+    gap: var(--space-sm);
+  }
+
+  .city-row:hover { padding-left: 0.5rem; }
+
+  .city-row__name { font-weight: 500; font-size: 0.95rem; }
+  .city-row__ar { font-size: 0.85rem; color: var(--color-ink-muted); direction: rtl; }
+  .city-row__desc { font-size: 0.8rem; color: var(--color-ink-muted); font-weight: 300; }
+  .city-row__arrow { color: var(--color-ink-muted); text-align: right; }
+
+  /* MAP CTA */
+  .map-cta-band {
+    padding: var(--space-xl) 0;
+    background: var(--color-surface);
+  }
+
+  .map-cta-band p {
     color: var(--color-ink-muted);
-  }
-
-  /* Cities */
-  .cities-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-xs);
-  }
-
-  .city-chip {
-    display: flex;
-    align-items: baseline;
-    gap: 0.5rem;
-    padding: 0.6rem 1.2rem;
-    border: 1px solid var(--color-border);
-    transition: border-color 0.3s, background 0.3s;
-  }
-
-  .city-chip:hover {
-    border-color: var(--color-accent);
-    background: white;
-  }
-
-  .city-name { font-weight: 500; }
-
-  .city-ar {
-    font-size: 0.85rem;
-    color: var(--color-ink-muted);
-    direction: rtl;
+    font-weight: 300;
+    margin-top: 0.3rem;
   }
 
   @media (max-width: 768px) {
-    .hero { padding: var(--space-xl) 0 var(--space-lg); }
-    .hero-stats { gap: var(--space-md); flex-wrap: wrap; }
-    .movements-row { grid-template-columns: 1fr; }
-    .inst-grid { grid-template-columns: 1fr; }
+    .hero-inner { grid-template-columns: 1fr; gap: var(--space-md); }
+    .hero h1 { font-size: clamp(2.5rem, 10vw, 4rem); }
+    .artists-stagger { grid-template-columns: 1fr 1fr; }
+    .artist-tile--push { margin-top: 0; }
+    .inst-row { grid-template-columns: 1fr; }
+    .city-row { grid-template-columns: 1fr 30px; }
+    .city-row__ar, .city-row__desc { display: none; }
   }
 </style>

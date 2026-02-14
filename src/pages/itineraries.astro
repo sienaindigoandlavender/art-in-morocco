@@ -1,0 +1,144 @@
+---
+import Base from '../layouts/Base.astro';
+import { getInstitutions, getCities } from '../lib/supabase';
+const institutions = await getInstitutions();
+const cities = await getCities();
+
+const cityMap = new Map(cities.map(c => [c.id, c.name]));
+cities.forEach(c => cityMap.set(`city-${c.slug}`, c.name));
+
+const marrakechInst = institutions.filter(i => {
+  const city = i.city_id ? cityMap.get(i.city_id) : '';
+  return city === 'Marrakech';
+});
+const casaInst = institutions.filter(i => {
+  const city = i.city_id ? cityMap.get(i.city_id) : '';
+  return city === 'Casablanca';
+});
+const rabatInst = institutions.filter(i => {
+  const city = i.city_id ? cityMap.get(i.city_id) : '';
+  return city === 'Rabat';
+});
+---
+
+<Base title="Art Itineraries — Morocco Art Guide" description="Self-guided art walks and curated itineraries for Marrakech, Casablanca, and Rabat. Designed for independent travellers.">
+  <div class="section-inner">
+    <div class="page-header">
+      <span class="micro-label">Itineraries</span>
+      <h1>Art Routes</h1>
+      <p class="page-desc">Self-guided walks and curated itineraries for seeing art across Morocco.</p>
+    </div>
+
+    <section class="itin-section">
+      <h2>Half-Day Art Walk: Marrakech</h2>
+      <span class="micro-label">{marrakechInst.length} spaces · 3–4 hours</span>
+      <div class="itin-steps">
+        <div class="itin-step">
+          <span class="step-num">01</span>
+          <div>
+            <h3>Musée Yves Saint Laurent</h3>
+            <p>Start with Studio KO's landmark building. Allow 1–1.5 hours for the permanent collection and any temporary exhibition.</p>
+          </div>
+        </div>
+        <div class="itin-step">
+          <span class="step-num">02</span>
+          <div>
+            <h3>Jardin Majorelle & Berber Museum</h3>
+            <p>Adjacent to YSL. The Pierre Bergé Museum of Berber Arts inside the garden houses 600+ artifacts. Combined tickets available.</p>
+          </div>
+        </div>
+        <div class="itin-step">
+          <span class="step-num">03</span>
+          <div>
+            <h3>Guéliz Galleries</h3>
+            <p>Walk south into Guéliz. Visit Matisse Art Gallery, Galerie 127 (photography), and VOICE Gallery. Most are free entry and within walking distance of each other.</p>
+          </div>
+        </div>
+        <div class="itin-step">
+          <span class="step-num">04</span>
+          <div>
+            <h3>MACAAL</h3>
+            <p>If time allows, taxi to Al Maaden for MACAAL — Morocco's premier contemporary African art museum. Don't miss the Sculpture Park.</p>
+          </div>
+        </div>
+      </div>
+      <a href="/cities/marrakech" class="cta-link">Full Marrakech guide →</a>
+    </section>
+
+    <section class="itin-section">
+      <h2>Half-Day Art Walk: Casablanca</h2>
+      <span class="micro-label">{casaInst.length} spaces · 3–4 hours</span>
+      <div class="itin-steps">
+        <div class="itin-step">
+          <span class="step-num">01</span>
+          <div>
+            <h3>Villa des Arts</h3>
+            <p>Start at the Fondation ONA's venue in a 1930s Art Deco villa. Rotating exhibitions of Moroccan and international contemporary art.</p>
+          </div>
+        </div>
+        <div class="itin-step">
+          <span class="step-num">02</span>
+          <div>
+            <h3>L'Uzine</h3>
+            <p>Walk to this cultural space in Aïn Sebaâ — a converted factory hosting exhibitions, workshops, and performing arts.</p>
+          </div>
+        </div>
+        <div class="itin-step">
+          <span class="step-num">03</span>
+          <div>
+            <h3>Le Cube</h3>
+            <p>Independent art space focused on research and contemporary practice. Exhibition programme runs October–June.</p>
+          </div>
+        </div>
+      </div>
+      <a href="/cities/casablanca" class="cta-link">Full Casablanca guide →</a>
+    </section>
+
+    <section class="itin-section">
+      <h2>Half-Day Art Walk: Rabat</h2>
+      <span class="micro-label">{rabatInst.length} spaces · 3–4 hours</span>
+      <div class="itin-steps">
+        <div class="itin-step">
+          <span class="step-num">01</span>
+          <div>
+            <h3>Mohammed VI Museum of Modern and Contemporary Art</h3>
+            <p>Morocco's flagship public museum. World-class permanent collection covering the full span of modern Moroccan art.</p>
+          </div>
+        </div>
+        <div class="itin-step">
+          <span class="step-num">02</span>
+          <div>
+            <h3>Villa des Arts Rabat</h3>
+            <p>Rabat's Fondation ONA venue, complementing the Casablanca location. Strong programme of emerging Moroccan artists.</p>
+          </div>
+        </div>
+        <div class="itin-step">
+          <span class="step-num">03</span>
+          <div>
+            <h3>Kasbah des Oudayas</h3>
+            <p>Not a gallery, but the Andalusian gardens and the museum inside the kasbah provide context for Morocco's artistic heritage.</p>
+          </div>
+        </div>
+      </div>
+      <a href="/cities/rabat" class="cta-link">Full Rabat guide →</a>
+    </section>
+
+    <section class="itin-section itin-curated">
+      <h2>Curated Multi-Day Journeys</h2>
+      <p>For guided, multi-day itineraries combining art, architecture, and culture across Morocco, see the curated journeys by Slow Morocco.</p>
+      <a href="https://www.slowmorocco.com/journeys" target="_blank" rel="noopener" class="cta-link">Browse journeys on Slow Morocco →</a>
+    </section>
+  </div>
+</Base>
+
+<style>
+  .itin-section { padding: var(--space-lg) 0; border-bottom: 1px solid var(--color-border); max-width: var(--max-width-narrow); }
+  .itin-section h2 { margin-bottom: 0.2rem; }
+  .itin-steps { margin-top: var(--space-md); display: flex; flex-direction: column; gap: 0; }
+  .itin-step { display: flex; gap: var(--space-sm); padding: 0.8rem 0; border-top: 1px solid var(--color-border); }
+  .step-num { font-family: var(--font-body); font-size: 0.6rem; font-weight: 600; letter-spacing: 0.12em; color: var(--color-ink-muted); flex-shrink: 0; padding-top: 0.15rem; }
+  .itin-step h3 { font-size: 1rem; margin-bottom: 0.2rem; }
+  .itin-step p { font-size: 0.85rem; font-weight: 300; color: var(--color-ink-light); line-height: 1.5; }
+  .itin-curated { background: var(--color-surface); padding: var(--space-md); margin-left: calc(-1 * var(--space-md)); margin-right: calc(-1 * var(--space-md)); padding-left: var(--space-md); padding-right: var(--space-md); max-width: none; }
+  .itin-curated p { font-size: 0.92rem; font-weight: 300; color: var(--color-ink-light); line-height: 1.5; margin-top: 0.4rem; }
+</style>

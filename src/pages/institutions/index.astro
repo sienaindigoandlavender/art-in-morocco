@@ -1,57 +1,526 @@
 ---
 import Base from '../../layouts/Base.astro';
-import { getInstitutions } from '../../lib/supabase';
+import { getInstitutions, getCities } from '../../lib/supabase';
 const institutions = await getInstitutions();
+const cities = await getCities();
 
-const types = [...new Set(institutions.map(i => i.type).filter(Boolean))];
-const byType = (type: string) => institutions.filter(i => i.type === type);
+const cityMap = new Map(cities.map(c => [c.id, c.name]));
+cities.forEach(c => cityMap.set(`city-${c.slug}`, c.name));
+
+const typeConfig: Record<string, { label: string; icon: string }> = {
+  'MUSEUM': { label: 'Museum', icon: '◼' },
+  'GALLERY': { label: 'Gallery', icon: '◻' },
+  'CULTURAL_CENTER': { label: 'Cultural Centre', icon: '◈' },
+  'RESIDENCY': { label: 'Residency', icon: '◇' },
+  'FOUNDATION': { label: 'Foundation', icon: '△' },
+  'ART_SCHOOL': { label: 'Art School', icon: '○' },
+  'ARTS_CENTER': { label: 'Arts Centre', icon: '◎' },
+};
+
+const types = [...new Set(institutions.map(i => i.type).filter(Boolean))] as string[];
+const cityNames = [...new Set(institutions.map(i => i.city_id ? (cityMap.get(i.city_id) || '') : '').filter(Boolean))].sort();
+
+// Build JSON for client-side search
+const directoryData = institutions.map(inst => ({
+  slug: inst.slug,
+  name: inst.name,
+  nameAr: inst.name_ar || '',
+  type: inst.type || '',
+  typeLabel: typeConfig[inst.type || '']?.label || inst.type || '',
+  typeIcon: typeConfig[inst.type || '']?.icon || '●',
+  city: inst.city_id ? (cityMap.get(inst.city_id) || '') : '',
+  address: inst.address || '',
+  hours: inst.hours || '',
+  admission: inst.admission || '',
+  phone: inst.phone || '',
+  email: inst.email || '',
+  website: inst.website || '',
+  description: inst.description || '',
+  lat: inst.latitude,
+  lng: inst.longitude,
+  year: inst.year_established,
+}));
 ---
 
-<Base title="Art Spaces in Morocco — Museums, Galleries & Residencies" description={`${institutions.length} art institutions across Morocco — museums, galleries, cultural centres, and artist residencies.`}>
+<Base title="Art Directory — Museums & Galleries in Morocco" description={`${institutions.length} art spaces in Morocco — addresses, hours, phone numbers and websites for museums, galleries, residencies and cultural centres.`}>
   <div class="section-inner">
     <div class="page-header">
-      <span class="micro-label">Spaces</span>
-      <h1>Where to See Art in Morocco</h1>
-      <p class="page-desc">{institutions.length} museums, galleries, cultural centres, and artist residencies.</p>
+      <span class="micro-label">Directory</span>
+      <h1>Art Spaces</h1>
+      <p class="page-desc">{institutions.length} museums, galleries, and cultural spaces across Morocco.</p>
     </div>
 
-    {types.map(type => (
-      <section class="type-section">
-        <h2 class="type-heading">{type === 'MUSEUM' ? 'Museums' : type === 'GALLERY' ? 'Galleries' : type === 'CULTURAL_CENTER' ? 'Cultural Centres' : type === 'RESIDENCY' ? 'Residencies' : type === 'FOUNDATION' ? 'Foundations' : type === 'ARTS_CENTER' ? 'Arts Centres' : type}</h2>
-        <div class="inst-list">
-          {byType(type!).map(inst => (
-            <a href={`/institutions/${inst.slug}`} class="inst-row">
-              <div class="inst-main">
-                <h3>{inst.name}</h3>
-                {inst.description && <p>{inst.description.slice(0, 150)}{inst.description.length > 150 ? '…' : ''}</p>}
-              </div>
-              <div class="inst-meta">
-                {inst.year_established && <span>Est. {inst.year_established}</span>}
-              </div>
-            </a>
-          ))}
+    <!-- Search + Filters -->
+    <div class="dir-controls">
+      <div class="search-box">
+        <svg class="search-icon" viewBox="0 0 16 16" fill="none"><circle cx="6.5" cy="6.5" r="5" stroke="currentColor" stroke-width="1.3"/><path d="M10.5 10.5L14.5 14.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        <input type="text" id="dir-search" placeholder="Search by name, city, or keyword…" autocomplete="off">
+        <button class="search-clear" id="search-clear" style="display:none;">✕</button>
+      </div>
+      <div class="filter-row">
+        <div class="filter-group">
+          <span class="filter-label">Type</span>
+          <div class="filter-buttons" id="type-filters">
+            <button class="fbtn active" data-type="ALL">All</button>
+            {types.map(t => {
+              const cfg = typeConfig[t] || { label: t, icon: '●' };
+              return <button class="fbtn" data-type={t}><span class="fbtn-icon">{cfg.icon}</span> {cfg.label}</button>;
+            })}
+          </div>
         </div>
-      </section>
-    ))}
+        <div class="filter-group">
+          <span class="filter-label">City</span>
+          <select id="city-filter" class="city-select">
+            <option value="ALL">All cities</option>
+            {cityNames.map(c => <option value={c}>{c}</option>)}
+          </select>
+        </div>
+      </div>
+      <div class="results-bar">
+        <span id="results-count">{institutions.length} spaces</span>
+        <div class="action-buttons">
+          <button class="action-btn" id="btn-print" title="Print directory">
+            <svg viewBox="0 0 16 16" fill="none"><path d="M4 5V1h8v4M4 11H2.5A1.5 1.5 0 011 9.5v-3A1.5 1.5 0 012.5 5h11A1.5 1.5 0 0115 6.5v3a1.5 1.5 0 01-1.5 1.5H12" stroke="currentColor" stroke-width="1.1"/><rect x="4" y="9" width="8" height="6" stroke="currentColor" stroke-width="1.1"/></svg>
+            Print
+          </button>
+          <button class="action-btn" id="btn-email" title="Email directory">
+            <svg viewBox="0 0 16 16" fill="none"><rect x="1.5" y="3.5" width="13" height="9" rx="1" stroke="currentColor" stroke-width="1.1"/><path d="M1.5 4.5L8 9l6.5-4.5" stroke="currentColor" stroke-width="1.1"/></svg>
+            Email
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Directory list -->
+    <div id="dir-list">
+      <!-- Rendered by JS -->
+    </div>
+
+    <div id="no-results" style="display:none;" class="no-results">
+      <p>No spaces match your search.</p>
+    </div>
+
+    <div style="text-align: center; margin-top: var(--space-lg);">
+      <a href="/map" class="cta-link">View on map →</a>
+    </div>
   </div>
 </Base>
 
+<script define:vars={{ directoryData }}>
+  document.addEventListener('DOMContentLoaded', () => {
+    const searchInput = document.getElementById('dir-search');
+    const clearBtn = document.getElementById('search-clear');
+    const typeFilters = document.getElementById('type-filters');
+    const cityFilter = document.getElementById('city-filter');
+    const listEl = document.getElementById('dir-list');
+    const noResults = document.getElementById('no-results');
+    const resultsCount = document.getElementById('results-count');
+
+    let activeType = 'ALL';
+    let activeCity = 'ALL';
+    let searchQuery = '';
+
+    function getFiltered() {
+      return directoryData.filter(d => {
+        if (activeType !== 'ALL' && d.type !== activeType) return false;
+        if (activeCity !== 'ALL' && d.city !== activeCity) return false;
+        if (searchQuery) {
+          const q = searchQuery.toLowerCase();
+          const hay = (d.name + ' ' + d.nameAr + ' ' + d.city + ' ' + d.description + ' ' + d.address + ' ' + d.typeLabel).toLowerCase();
+          return hay.includes(q);
+        }
+        return true;
+      });
+    }
+
+    function svgPin() { return '<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 1C5.24 1 3 3.24 3 6c0 3.75 5 9 5 9s5-5.25 5-9c0-2.76-2.24-5-5-5zm0 6.5a1.5 1.5 0 110-3 1.5 1.5 0 010 3z" fill="currentColor"/></svg>'; }
+    function svgClock() { return '<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.2"/><path d="M8 4v4.5l3 1.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>'; }
+    function svgTicket() { return '<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="4" width="13" height="8" rx="1" stroke="currentColor" stroke-width="1.2"/><circle cx="8" cy="8" r="2" stroke="currentColor" stroke-width="1.2"/></svg>'; }
+    function svgPhone() { return '<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3.6 1.85l1.5-.35a.8.8 0 01.9.45l1 2.2a.8.8 0 01-.2.9L5.5 6.3a8.4 8.4 0 004.2 4.2l1.25-1.3a.8.8 0 01.9-.2l2.2 1a.8.8 0 01.45.9l-.35 1.5A.8.8 0 0113.4 13C7 13 3 9 3 2.6a.8.8 0 01.6-.75z" fill="currentColor"/></svg>'; }
+    function svgWeb() { return '<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.2"/><path d="M1.5 8h13M8 1.5c1.66 1.63 2.6 3.9 2.6 6.5s-.94 4.87-2.6 6.5c-1.66-1.63-2.6-3.9-2.6-6.5S6.34 3.13 8 1.5z" stroke="currentColor" stroke-width="1.2"/></svg>'; }
+
+    function render() {
+      const filtered = getFiltered();
+      resultsCount.textContent = filtered.length + ' space' + (filtered.length !== 1 ? 's' : '');
+      noResults.style.display = filtered.length === 0 ? 'block' : 'none';
+
+      // Group by type
+      const grouped = {};
+      filtered.forEach(d => {
+        if (!grouped[d.type]) grouped[d.type] = [];
+        grouped[d.type].push(d);
+      });
+
+      let html = '';
+      for (const type of Object.keys(grouped)) {
+        const items = grouped[type];
+        const cfg = items[0];
+        html += '<div class="dir-type-group">';
+        html += '<h2 class="dir-type-title"><span class="type-icon">' + cfg.typeIcon + '</span> ' + cfg.typeLabel + (cfg.typeLabel.endsWith('y') ? 'ies' : cfg.typeLabel.endsWith('e') ? 's' : 's') + ' <span class="dir-type-count">' + items.length + '</span></h2>';
+
+        items.forEach(d => {
+          const gmapsUrl = d.lat && d.lng ? 'https://www.google.com/maps/search/?api=1&query=' + d.lat + ',' + d.lng : (d.address ? 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(d.name + ' ' + d.address) : '');
+          const gmapsSaveUrl = d.lat && d.lng ? 'https://www.google.com/maps/dir/?api=1&destination=' + d.lat + ',' + d.lng : '';
+
+          html += '<div class="dir-card" data-slug="' + d.slug + '">';
+          html += '<div class="dir-card__main">';
+          html += '<a href="/institutions/' + d.slug + '" class="dir-card__name">' + d.name + '</a>';
+          if (d.city) html += '<span class="dir-card__city">' + d.city + '</span>';
+          if (d.description) html += '<p class="dir-card__desc">' + d.description + '</p>';
+          html += '</div>';
+
+          html += '<div class="dir-card__details">';
+          if (d.address) html += '<div class="dir-detail">' + svgPin() + '<span>' + d.address + '</span></div>';
+          if (d.hours) html += '<div class="dir-detail">' + svgClock() + '<span>' + d.hours + '</span></div>';
+          if (d.admission) html += '<div class="dir-detail">' + svgTicket() + '<span>' + d.admission + '</span></div>';
+          if (d.phone) html += '<div class="dir-detail">' + svgPhone() + '<a href="tel:' + d.phone + '">' + d.phone + '</a></div>';
+          if (d.website) html += '<div class="dir-detail">' + svgWeb() + '<a href="' + d.website + '" target="_blank" rel="noopener">' + d.website.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '') + '</a></div>';
+          html += '</div>';
+
+          html += '<div class="dir-card__actions">';
+          if (gmapsSaveUrl) html += '<a href="' + gmapsSaveUrl + '" target="_blank" rel="noopener" class="card-action" title="Save to Google Maps"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 1C5.24 1 3 3.24 3 6c0 3.75 5 9 5 9s5-5.25 5-9c0-2.76-2.24-5-5-5zm0 6.5a1.5 1.5 0 110-3 1.5 1.5 0 010 3z" fill="currentColor"/></svg> Save</a>';
+          html += '<button class="card-action" data-share="' + d.slug + '" title="Share"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M4 8v5h8V8M8 1v8M5 4l3-3 3 3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg> Share</button>';
+          html += '</div>';
+          html += '</div>';
+        });
+
+        html += '</div>';
+      }
+
+      listEl.innerHTML = html;
+
+      // Wire share buttons
+      listEl.querySelectorAll('[data-share]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const slug = btn.dataset.share;
+          const d = directoryData.find(x => x.slug === slug);
+          if (!d) return;
+          const text = d.name + '\n' + (d.address || '') + '\n' + (d.hours ? 'Hours: ' + d.hours : '') + '\n' + (d.phone || '') + '\n' + (d.website || '') + '\nhttps://moroccoartguide.com/institutions/' + d.slug;
+          if (navigator.share) {
+            navigator.share({ title: d.name, text: text, url: 'https://moroccoartguide.com/institutions/' + d.slug });
+          } else {
+            const subject = encodeURIComponent(d.name + ' — Morocco Art Guide');
+            const body = encodeURIComponent(text);
+            window.open('mailto:?subject=' + subject + '&body=' + body);
+          }
+        });
+      });
+    }
+
+    // Search
+    searchInput.addEventListener('input', (e) => {
+      searchQuery = e.target.value;
+      clearBtn.style.display = searchQuery ? 'block' : 'none';
+      render();
+    });
+
+    clearBtn.addEventListener('click', () => {
+      searchInput.value = '';
+      searchQuery = '';
+      clearBtn.style.display = 'none';
+      searchInput.focus();
+      render();
+    });
+
+    // Type filters
+    typeFilters.addEventListener('click', (e) => {
+      const btn = e.target.closest('.fbtn');
+      if (!btn) return;
+      typeFilters.querySelectorAll('.fbtn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      activeType = btn.dataset.type;
+      render();
+    });
+
+    // City filter
+    cityFilter.addEventListener('change', () => {
+      activeCity = cityFilter.value;
+      render();
+    });
+
+    // Print
+    document.getElementById('btn-print').addEventListener('click', () => window.print());
+
+    // Email full directory
+    document.getElementById('btn-email').addEventListener('click', () => {
+      const filtered = getFiltered();
+      let body = 'Morocco Art Guide — Art Spaces Directory\n\n';
+      filtered.forEach(d => {
+        body += d.typeIcon + ' ' + d.name + '\n';
+        if (d.address) body += '  Address: ' + d.address + '\n';
+        if (d.hours) body += '  Hours: ' + d.hours + '\n';
+        if (d.admission) body += '  Admission: ' + d.admission + '\n';
+        if (d.phone) body += '  Phone: ' + d.phone + '\n';
+        if (d.website) body += '  Web: ' + d.website + '\n';
+        body += '\n';
+      });
+      body += 'moroccoartguide.com/institutions';
+      const subject = encodeURIComponent('Art Spaces in Morocco (' + filtered.length + ' places)');
+      window.open('mailto:?subject=' + subject + '&body=' + encodeURIComponent(body));
+    });
+
+    render();
+  });
+</script>
+
 <style>
-  .type-section { margin-bottom: var(--space-xl); }
-  .type-heading {
-    font-size: 0.75rem; font-family: var(--font-body); font-weight: 600;
-    letter-spacing: 0.12em; text-transform: uppercase;
-    color: var(--color-accent); margin-bottom: var(--space-sm);
-    padding-bottom: 0.5rem; border-bottom: 1px solid var(--color-border);
+  .dir-controls {
+    margin-bottom: var(--space-md);
   }
-  .inst-list { display: flex; flex-direction: column; }
-  .inst-row {
-    display: flex; justify-content: space-between; align-items: start;
-    padding: var(--space-sm) 0; border-bottom: 1px solid var(--color-border);
-    transition: background 0.2s; gap: var(--space-md);
+
+  .search-box {
+    position: relative;
+    margin-bottom: 0.8rem;
   }
-  .inst-row:hover { background: var(--color-surface); padding-left: var(--space-xs); padding-right: var(--space-xs); }
-  .inst-main h3 { font-size: 1.05rem; margin-bottom: 0.2rem; }
-  .inst-main p { font-size: 0.85rem; color: var(--color-ink-light); line-height: 1.4; }
-  .inst-meta { font-size: 0.78rem; color: var(--color-ink-muted); white-space: nowrap; flex-shrink: 0; }
+
+  .search-icon {
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 16px;
+    height: 16px;
+    color: var(--color-ink-muted);
+  }
+
+  #dir-search {
+    width: 100%;
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+    font-weight: 300;
+    padding: 0.6rem 2rem 0.6rem 1.6rem;
+    border: none;
+    border-bottom: 1px solid var(--color-border);
+    background: transparent;
+    color: var(--color-ink);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  #dir-search:focus { border-color: var(--color-ink); }
+  #dir-search::placeholder { color: var(--color-ink-muted); font-weight: 300; }
+
+  .search-clear {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    font-size: 0.85rem;
+    color: var(--color-ink-muted);
+    cursor: pointer;
+    padding: 0.4rem;
+  }
+
+  .filter-row {
+    display: flex;
+    gap: var(--space-md);
+    align-items: flex-start;
+    flex-wrap: wrap;
+    margin-bottom: 0.8rem;
+  }
+
+  .filter-group { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+
+  .filter-label {
+    font-size: 0.6rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--color-ink-muted);
+  }
+
+  .filter-buttons { display: flex; gap: 0.3rem; flex-wrap: wrap; }
+
+  .fbtn {
+    font-family: var(--font-body);
+    font-size: 0.68rem;
+    font-weight: 400;
+    padding: 0.3rem 0.6rem;
+    background: transparent;
+    color: var(--color-ink-muted);
+    border: 1px solid var(--color-border);
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+
+  .fbtn:hover { border-color: var(--color-ink); color: var(--color-ink); }
+  .fbtn.active { background: var(--color-ink); color: white; border-color: var(--color-ink); }
+  .fbtn-icon { font-size: 0.6rem; }
+
+  .city-select {
+    font-family: var(--font-body);
+    font-size: 0.75rem;
+    padding: 0.3rem 0.6rem;
+    border: 1px solid var(--color-border);
+    background: white;
+    color: var(--color-ink);
+    cursor: pointer;
+    outline: none;
+  }
+
+  .results-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.6rem 0;
+    border-bottom: 1px solid var(--color-ink);
+    margin-bottom: 0;
+  }
+
+  #results-count {
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-ink-muted);
+  }
+
+  .action-buttons { display: flex; gap: 0.6rem; }
+
+  .action-btn {
+    font-family: var(--font-body);
+    font-size: 0.68rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.3rem 0.5rem;
+    background: none;
+    border: 1px solid var(--color-border);
+    color: var(--color-ink-muted);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .action-btn:hover { border-color: var(--color-ink); color: var(--color-ink); }
+  .action-btn svg { width: 14px; height: 14px; }
+
+  /* Directory cards — injected by JS, styled globally */
+  :global(.dir-type-group) { margin-bottom: var(--space-lg); }
+
+  :global(.dir-type-title) {
+    font-family: var(--font-body);
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--color-ink-muted);
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.8rem 0 0.5rem;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  :global(.dir-type-count) { color: var(--color-border-dark); font-weight: 400; }
+
+  :global(.dir-card) {
+    display: grid;
+    grid-template-columns: 1fr 300px auto;
+    gap: var(--space-sm);
+    padding: var(--space-sm) 0;
+    border-bottom: 1px solid var(--color-border);
+    align-items: start;
+  }
+
+  :global(.dir-card__name) {
+    font-family: var(--font-display);
+    font-size: 1.05rem;
+    line-height: 1.2;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.2s;
+  }
+
+  :global(.dir-card__name:hover) { border-bottom-color: var(--color-ink); }
+
+  :global(.dir-card__city) {
+    display: inline-block;
+    margin-left: 0.5rem;
+    font-size: 0.65rem;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-ink-muted);
+  }
+
+  :global(.dir-card__desc) {
+    font-size: 0.82rem;
+    font-weight: 300;
+    color: var(--color-ink-light);
+    line-height: 1.4;
+    margin-top: 0.25rem;
+  }
+
+  :global(.dir-card__details) { display: flex; flex-direction: column; gap: 0.3rem; }
+
+  :global(.dir-detail) {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.4rem;
+    font-size: 0.78rem;
+    color: var(--color-ink-light);
+    font-weight: 300;
+  }
+
+  :global(.dir-detail svg) { flex-shrink: 0; color: var(--color-ink-muted); margin-top: 1px; }
+
+  :global(.dir-detail a) {
+    color: var(--color-ink);
+    font-weight: 400;
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.15s;
+  }
+
+  :global(.dir-detail a:hover) { border-bottom-color: var(--color-ink); }
+
+  :global(.dir-card__actions) {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    align-self: start;
+  }
+
+  :global(.card-action) {
+    font-family: var(--font-body);
+    font-size: 0.65rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.25rem 0.5rem;
+    background: none;
+    border: 1px solid var(--color-border);
+    color: var(--color-ink-muted);
+    cursor: pointer;
+    transition: all 0.15s;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+
+  :global(.card-action:hover) { border-color: var(--color-ink); color: var(--color-ink); }
+  :global(.card-action svg) { width: 14px; height: 14px; }
+
+  .no-results {
+    padding: var(--space-xl) 0;
+    text-align: center;
+    color: var(--color-ink-muted);
+  }
+
+  /* Print styles */
+  @media print {
+    .site-header, .site-footer, .dir-controls, .cta-link, :global(.dir-card__actions) { display: none !important; }
+    :global(.dir-card) { grid-template-columns: 1fr 1fr; break-inside: avoid; }
+  }
+
+  @media (max-width: 768px) {
+    :global(.dir-card) { grid-template-columns: 1fr; }
+    :global(.dir-card__actions) { flex-direction: row; }
+    .filter-row { flex-direction: column; gap: 0.5rem; }
+  }
 </style>

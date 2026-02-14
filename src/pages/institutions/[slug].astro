@@ -1,6 +1,6 @@
 ---
 import Base from '../../layouts/Base.astro';
-import { getInstitutions, getInstitutionBySlug } from '../../lib/supabase';
+import { getInstitutions, getInstitutionBySlug, getCities } from '../../lib/supabase';
 
 export async function getStaticPaths() {
   const institutions = await getInstitutions();
@@ -11,19 +11,45 @@ const { slug } = Astro.params;
 const inst = await getInstitutionBySlug(slug!);
 if (!inst) return Astro.redirect('/institutions');
 
-const typeLabel = inst.type === 'MUSEUM' ? 'Museum' : inst.type === 'GALLERY' ? 'Gallery' : inst.type === 'CULTURAL_CENTER' ? 'Cultural Centre' : inst.type === 'RESIDENCY' ? 'Residency' : inst.type === 'FOUNDATION' ? 'Foundation' : inst.type || 'Institution';
+const cities = await getCities();
+const cityMap = new Map(cities.map(c => [c.id, c]));
+cities.forEach(c => cityMap.set(`city-${c.slug}`, c));
+const city = inst.city_id ? cityMap.get(inst.city_id) : null;
+
+const typeLabels: Record<string, string> = {
+  'MUSEUM': 'Museum', 'GALLERY': 'Gallery', 'CULTURAL_CENTER': 'Cultural Centre',
+  'RESIDENCY': 'Residency', 'FOUNDATION': 'Foundation', 'ART_SCHOOL': 'Art School', 'ARTS_CENTER': 'Arts Centre',
+};
+const typeLabel = typeLabels[inst.type || ''] || inst.type || 'Institution';
+
+const gmapsUrl = inst.latitude && inst.longitude
+  ? `https://www.google.com/maps/search/?api=1&query=${inst.latitude},${inst.longitude}`
+  : inst.address ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(inst.name + ' ' + inst.address)}` : '';
+const gmapsDirUrl = inst.latitude && inst.longitude
+  ? `https://www.google.com/maps/dir/?api=1&destination=${inst.latitude},${inst.longitude}` : '';
 
 const jsonLd = {
   "@context": "https://schema.org",
-  "@type": "Museum",
+  "@type": inst.type === 'MUSEUM' ? 'Museum' : inst.type === 'GALLERY' ? 'ArtGallery' : 'CivicStructure',
   "name": inst.name,
   ...(inst.description && { "description": inst.description }),
-  ...(inst.address && { "address": inst.address }),
+  ...(inst.address && { "address": { "@type": "PostalAddress", "streetAddress": inst.address } }),
   ...(inst.website && { "url": inst.website }),
   ...(inst.phone && { "telephone": inst.phone }),
+  ...(inst.email && { "email": inst.email }),
+  ...(inst.hours && { "openingHours": inst.hours }),
   ...(inst.latitude && inst.longitude && {
     "geo": { "@type": "GeoCoordinates", "latitude": inst.latitude, "longitude": inst.longitude }
   })
+};
+
+const shareData = {
+  name: inst.name,
+  address: inst.address || '',
+  hours: inst.hours || '',
+  phone: inst.phone || '',
+  website: inst.website || '',
+  slug: inst.slug,
 };
 ---
 
@@ -31,57 +57,149 @@ const jsonLd = {
   <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
 
   <article class="section-inner">
-    <header class="page-header" style="text-align: left;">
-      <span class="micro-label">{typeLabel}</span>
+    <header class="inst-header">
+      <span class="micro-label">{typeLabel}{city ? ` · ${city.name}` : ''}</span>
       <h1>{inst.name}</h1>
       {inst.name_ar && <p class="name-ar">{inst.name_ar}</p>}
+      {inst.description && <p class="inst-intro">{inst.description}</p>}
     </header>
 
-    <div class="inst-body">
-      <div class="inst-content">
-        {inst.description_long ? (
-          <div class="inst-desc" set:html={inst.description_long.replace(/\n/g, '<br><br>')} />
-        ) : inst.description ? (
-          <p class="inst-desc">{inst.description}</p>
-        ) : null}
+    <!-- Actions row -->
+    <div class="inst-actions">
+      {gmapsDirUrl && <a href={gmapsDirUrl} target="_blank" rel="noopener" class="inst-action-btn">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 1C5.24 1 3 3.24 3 6c0 3.75 5 9 5 9s5-5.25 5-9c0-2.76-2.24-5-5-5zm0 6.5a1.5 1.5 0 110-3 1.5 1.5 0 010 3z" fill="currentColor"/></svg>
+        Save to Maps
+      </a>}
+      {gmapsUrl && <a href={gmapsUrl} target="_blank" rel="noopener" class="inst-action-btn">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M14 2L2 7l5 2 2 5z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>
+        Directions
+      </a>}
+      <button class="inst-action-btn" id="btn-share">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M4 8v5h8V8M8 1v8M5 4l3-3 3 3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Share
+      </button>
+      <button class="inst-action-btn" id="btn-print-detail">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M4 5V1h8v4M4 11H2.5A1.5 1.5 0 011 9.5v-3A1.5 1.5 0 012.5 5h11A1.5 1.5 0 0115 6.5v3a1.5 1.5 0 01-1.5 1.5H12" stroke="currentColor" stroke-width="1.1"/><rect x="4" y="9" width="8" height="6" stroke="currentColor" stroke-width="1.1"/></svg>
+        Print
+      </button>
+    </div>
 
-        {inst.highlights && (
-          <div class="inst-highlights">
-            <h3>Highlights</h3>
-            <p>{inst.highlights}</p>
-          </div>
-        )}
+    <!-- Info card -->
+    <div class="inst-info-card">
+      {inst.address && (
+        <div class="info-row">
+          <svg class="info-icon" viewBox="0 0 16 16" fill="none"><path d="M8 1C5.24 1 3 3.24 3 6c0 3.75 5 9 5 9s5-5.25 5-9c0-2.76-2.24-5-5-5zm0 6.5a1.5 1.5 0 110-3 1.5 1.5 0 010 3z" fill="currentColor"/></svg>
+          <div><span class="info-label">Address</span><span class="info-value">{inst.address}</span></div>
+        </div>
+      )}
+      {inst.hours && (
+        <div class="info-row">
+          <svg class="info-icon" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.2"/><path d="M8 4v4.5l3 1.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+          <div><span class="info-label">Hours</span><span class="info-value">{inst.hours}</span></div>
+        </div>
+      )}
+      {inst.admission && (
+        <div class="info-row">
+          <svg class="info-icon" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="4" width="13" height="8" rx="1" stroke="currentColor" stroke-width="1.2"/><circle cx="8" cy="8" r="2" stroke="currentColor" stroke-width="1.2"/></svg>
+          <div><span class="info-label">Admission</span><span class="info-value">{inst.admission}</span></div>
+        </div>
+      )}
+      {inst.phone && (
+        <div class="info-row">
+          <svg class="info-icon" viewBox="0 0 16 16" fill="none"><path d="M3.6 1.85l1.5-.35a.8.8 0 01.9.45l1 2.2a.8.8 0 01-.2.9L5.5 6.3a8.4 8.4 0 004.2 4.2l1.25-1.3a.8.8 0 01.9-.2l2.2 1a.8.8 0 01.45.9l-.35 1.5A.8.8 0 0113.4 13C7 13 3 9 3 2.6a.8.8 0 01.6-.75z" fill="currentColor"/></svg>
+          <div><span class="info-label">Phone</span><a href={`tel:${inst.phone}`} class="info-value info-link">{inst.phone}</a></div>
+        </div>
+      )}
+      {inst.email && (
+        <div class="info-row">
+          <svg class="info-icon" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="3.5" width="13" height="9" rx="1" stroke="currentColor" stroke-width="1.2"/><path d="M1.5 4.5L8 9l6.5-4.5" stroke="currentColor" stroke-width="1.2"/></svg>
+          <div><span class="info-label">Email</span><a href={`mailto:${inst.email}`} class="info-value info-link">{inst.email}</a></div>
+        </div>
+      )}
+      {inst.website && (
+        <div class="info-row">
+          <svg class="info-icon" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.2"/><path d="M1.5 8h13M8 1.5c1.66 1.63 2.6 3.9 2.6 6.5s-.94 4.87-2.6 6.5c-1.66-1.63-2.6-3.9-2.6-6.5S6.34 3.13 8 1.5z" stroke="currentColor" stroke-width="1.2"/></svg>
+          <div><span class="info-label">Website</span><a href={inst.website} target="_blank" rel="noopener" class="info-value info-link">{inst.website.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '')}</a></div>
+        </div>
+      )}
+      {inst.year_established && (
+        <div class="info-row">
+          <svg class="info-icon" viewBox="0 0 16 16" fill="none"><rect x="2" y="3" width="12" height="11" rx="1" stroke="currentColor" stroke-width="1.2"/><path d="M2 6h12M5 1v3M11 1v3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+          <div><span class="info-label">Established</span><span class="info-value">{inst.year_established}</span></div>
+        </div>
+      )}
+    </div>
+
+    {inst.highlights && (
+      <div class="inst-highlights">
+        <span class="micro-label">Highlights</span>
+        <p>{inst.highlights}</p>
       </div>
+    )}
 
-      <aside class="inst-sidebar">
-        <dl>
-          {inst.address && <><dt>Address</dt><dd>{inst.address}</dd></>}
-          {inst.hours && <><dt>Hours</dt><dd>{inst.hours}</dd></>}
-          {inst.admission && <><dt>Admission</dt><dd>{inst.admission}</dd></>}
-          {inst.phone && <><dt>Phone</dt><dd><a href={`tel:${inst.phone}`}>{inst.phone}</a></dd></>}
-          {inst.email && <><dt>Email</dt><dd><a href={`mailto:${inst.email}`}>{inst.email}</a></dd></>}
-          {inst.website && <><dt>Website</dt><dd><a href={inst.website} target="_blank" rel="noopener">{inst.website.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '')}</a></dd></>}
-          {inst.year_established && <><dt>Established</dt><dd>{inst.year_established}</dd></>}
-        </dl>
-      </aside>
+    <div class="inst-nav">
+      <a href="/institutions">← Back to directory</a>
+      <a href="/map">View on map</a>
     </div>
   </article>
+
+  <script define:vars={{ shareData }}>
+    document.getElementById('btn-share')?.addEventListener('click', () => {
+      const text = shareData.name + '\n' + shareData.address + (shareData.hours ? '\nHours: ' + shareData.hours : '') + (shareData.phone ? '\n' + shareData.phone : '') + (shareData.website ? '\n' + shareData.website : '') + '\nhttps://moroccoartguide.com/institutions/' + shareData.slug;
+      if (navigator.share) {
+        navigator.share({ title: shareData.name, text: text, url: 'https://moroccoartguide.com/institutions/' + shareData.slug });
+      } else {
+        window.open('mailto:?subject=' + encodeURIComponent(shareData.name + ' — Morocco Art Guide') + '&body=' + encodeURIComponent(text));
+      }
+    });
+    document.getElementById('btn-print-detail')?.addEventListener('click', () => window.print());
+  </script>
 </Base>
 
 <style>
-  .name-ar { font-size: 1.3rem; color: var(--color-ink-muted); direction: rtl; }
-  .inst-body { display: grid; grid-template-columns: 1fr 280px; gap: var(--space-xl); margin-top: var(--space-md); }
-  .inst-desc { font-size: 1.05rem; line-height: 1.7; color: var(--color-ink-light); }
-  .inst-highlights { margin-top: var(--space-md); }
-  .inst-highlights h3 { font-size: 1rem; margin-bottom: 0.5rem; }
-  .inst-highlights p { font-size: 0.95rem; color: var(--color-ink-light); line-height: 1.6; }
-  .inst-sidebar {
-    background: var(--color-surface); padding: var(--space-md);
-    border: 1px solid var(--color-border); align-self: start;
+  .inst-header { padding: var(--space-xl) 0 var(--space-sm); max-width: 700px; }
+  .name-ar { font-size: 1.3rem; color: var(--color-ink-muted); direction: rtl; margin-top: 0.2rem; }
+  .inst-intro { margin-top: var(--space-sm); font-size: 1rem; font-weight: 300; color: var(--color-ink-light); line-height: 1.6; }
+
+  .inst-actions {
+    display: flex; gap: 0.4rem; flex-wrap: wrap;
+    margin-bottom: var(--space-md); padding-bottom: var(--space-sm);
+    border-bottom: 1px solid var(--color-border);
   }
-  .inst-sidebar dl { display: grid; grid-template-columns: 1fr; gap: 0.8rem; }
-  .inst-sidebar dt { font-size: 0.68rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-ink-muted); }
-  .inst-sidebar dd { font-size: 0.88rem; color: var(--color-ink-light); margin-top: -0.4rem; }
-  .inst-sidebar a { color: var(--color-accent); }
-  @media (max-width: 768px) { .inst-body { grid-template-columns: 1fr; } }
+
+  .inst-action-btn {
+    font-family: var(--font-body);
+    font-size: 0.72rem; font-weight: 500;
+    display: flex; align-items: center; gap: 0.35rem;
+    padding: 0.4rem 0.7rem;
+    background: none; border: 1px solid var(--color-border);
+    color: var(--color-ink-muted); cursor: pointer;
+    transition: all 0.15s; text-decoration: none;
+  }
+
+  .inst-action-btn:hover { border-color: var(--color-ink); color: var(--color-ink); }
+
+  .inst-info-card {
+    max-width: 560px; border: 1px solid var(--color-border);
+    padding: var(--space-md); display: flex; flex-direction: column;
+    gap: 0.7rem; margin-bottom: var(--space-md);
+  }
+
+  .info-row { display: flex; align-items: flex-start; gap: 0.7rem; }
+  .info-icon { width: 16px; height: 16px; flex-shrink: 0; color: var(--color-ink-muted); margin-top: 1px; }
+  .info-label { display: block; font-size: 0.58rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--color-ink-muted); margin-bottom: 1px; }
+  .info-value { font-size: 0.88rem; color: var(--color-ink); font-weight: 400; }
+  .info-link { text-decoration: none; border-bottom: 1px solid transparent; transition: border-color 0.15s; }
+  .info-link:hover { border-bottom-color: var(--color-ink); }
+
+  .inst-highlights { max-width: 560px; margin-bottom: var(--space-md); }
+  .inst-highlights p { margin-top: 0.3rem; font-size: 0.88rem; font-weight: 300; color: var(--color-ink-light); line-height: 1.5; }
+
+  .inst-nav { display: flex; gap: var(--space-md); padding-top: var(--space-md); border-top: 1px solid var(--color-border); }
+  .inst-nav a { font-size: 0.75rem; font-weight: 500; color: var(--color-ink-muted); transition: color 0.2s; }
+  .inst-nav a:hover { color: var(--color-ink); }
+
+  @media print {
+    .site-header, .site-footer, .inst-actions, .inst-nav { display: none !important; }
+  }
 </style>
