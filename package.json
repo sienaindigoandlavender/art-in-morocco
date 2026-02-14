@@ -2,6 +2,9 @@
   "name": "morocco-art-guide",
   "type": "module",
   "version": "1.0.0",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "dev": "astro dev",
     "start": "astro dev",
@@ -9,8 +12,8 @@
     "preview": "astro preview"
   },
   "dependencies": {
-    "@astrojs/vercel": "^6.1.4",
+    "@astrojs/vercel": "^8.0.0",
     "@supabase/supabase-js": "^2.49.1",
-    "astro": "^4.16.18"
+    "astro": "^5.2.0"
   }
 }
