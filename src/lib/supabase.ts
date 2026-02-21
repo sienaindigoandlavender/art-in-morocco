@@ -1,18 +1,24 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
-const SITE_ID = 'morocco-art-guide';
-let _supabase: SupabaseClient | null = null;
-let _nexus: SupabaseClient | null = null;
+// =============================================================================
+// HARD-CODED DATA (no longer fetched from Supabase)
+// =============================================================================
+import { artists as _artists } from './data/artists';
+import { artworks as _artworks } from './data/artworks';
+import { movements as _movements } from './data/movements';
+import { institutions as _institutions } from './data/institutions';
+import { cities as _cities } from './data/cities';
+import { themes as _themes } from './data/themes';
+import { object_types as _objectTypes } from './data/object_types';
+import { artistMovements as _artistMovements } from './data/artist-movements';
+import { siteSettings as _siteSettings } from './data/site_settings';
 
-function getSupabase(): SupabaseClient {
-  if (!_supabase) {
-    const url = import.meta.env.PUBLIC_SUPABASE_URL || process.env.PUBLIC_SUPABASE_URL || '';
-    const key = import.meta.env.PUBLIC_SUPABASE_ANON_KEY || process.env.PUBLIC_SUPABASE_ANON_KEY || '';
-    if (!url || !key) throw new Error('Art Guide Supabase credentials not configured');
-    _supabase = createClient(url, key);
-  }
-  return _supabase;
-}
+// =============================================================================
+// NEXUS SUPABASE CLIENT — Shared across all brands (STILL LIVE)
+// =============================================================================
+
+const SITE_ID = 'morocco-art-guide';
+let _nexus: SupabaseClient | null = null;
 
 function getNexus(): SupabaseClient {
   if (!_nexus) {
@@ -24,7 +30,10 @@ function getNexus(): SupabaseClient {
   return _nexus;
 }
 
+// =============================================================================
 // Types
+// =============================================================================
+
 export interface Artist {
   id: string; slug: string; name: string; name_ar: string | null;
   birth_year: number | null; death_year: number | null;
@@ -68,98 +77,74 @@ export interface Theme { id: string; slug: string; name: string; description: st
 export interface ObjectType { id: string; slug: string; name: string; description: string | null; }
 export interface Genre { id: string; slug: string; name: string; description: string | null; }
 
-// Site data queries
+// =============================================================================
+// SITE DATA FETCHERS (now hard-coded)
+// =============================================================================
+
 export async function getArtists(): Promise<Artist[]> {
-  const { data, error } = await getSupabase().from('artists').select('*').eq('status', 'PUBLISHED').order('name');
-  if (error) { console.error('[Art] Artists error:', error.message); return []; }
-  return data as Artist[];
+  return _artists as unknown as Artist[];
 }
 
 export async function getArtistBySlug(slug: string): Promise<Artist | null> {
-  const { data, error } = await getSupabase().from('artists').select('*').eq('slug', slug).eq('status', 'PUBLISHED').single();
-  if (error) return null;
-  return data as Artist;
+  return (_artists as unknown as Artist[]).find(a => a.slug === slug) || null;
 }
 
 export async function getArtworks(): Promise<Artwork[]> {
-  const { data, error } = await getSupabase().from('artworks').select('*').eq('status', 'PUBLISHED').order('year');
-  if (error) { console.error('[Art] Artworks error:', error.message); return []; }
-  return data as Artwork[];
+  return _artworks as unknown as Artwork[];
 }
 
 export async function getArtworkBySlug(slug: string): Promise<Artwork | null> {
-  const { data, error } = await getSupabase().from('artworks').select('*').eq('slug', slug).single();
-  if (error) return null;
-  return data as Artwork;
+  return (_artworks as unknown as Artwork[]).find(a => a.slug === slug) || null;
 }
 
 export async function getArtworksByArtist(artistId: string): Promise<Artwork[]> {
-  const { data, error } = await getSupabase().from('artworks').select('*').eq('artist_id', artistId).eq('status', 'PUBLISHED').order('year');
-  if (error) return [];
-  return data as Artwork[];
+  return (_artworks as unknown as Artwork[]).filter(a => a.artist_id === artistId);
 }
 
 export async function getMovements(): Promise<Movement[]> {
-  const { data, error } = await getSupabase().from('movements').select('*').order('period_start');
-  if (error) { console.error('[Art] Movements error:', error.message); return []; }
-  return data as Movement[];
+  return _movements as unknown as Movement[];
 }
 
 export async function getMovementBySlug(slug: string): Promise<Movement | null> {
-  const { data, error } = await getSupabase().from('movements').select('*').eq('slug', slug).single();
-  if (error) return null;
-  return data as Movement;
+  return (_movements as unknown as Movement[]).find(m => m.slug === slug) || null;
 }
 
 export async function getInstitutions(): Promise<Institution[]> {
-  const { data, error } = await getSupabase().from('institutions').select('*').order('name');
-  if (error) { console.error('[Art] Institutions error:', error.message); return []; }
-  return data as Institution[];
+  return _institutions as unknown as Institution[];
 }
 
 export async function getInstitutionBySlug(slug: string): Promise<Institution | null> {
-  const { data, error } = await getSupabase().from('institutions').select('*').eq('slug', slug).single();
-  if (error) return null;
-  return data as Institution;
+  return (_institutions as unknown as Institution[]).find(i => i.slug === slug) || null;
 }
 
 export async function getCities(): Promise<City[]> {
-  const { data, error } = await getSupabase().from('cities').select('*').order('name');
-  if (error) return [];
-  return data as City[];
+  return _cities as unknown as City[];
 }
 
 export async function getThemes(): Promise<Theme[]> {
-  const { data, error } = await getSupabase().from('themes').select('*').order('name');
-  if (error) return [];
-  return data as Theme[];
+  return _themes as unknown as Theme[];
 }
 
 export async function getObjectTypes(): Promise<ObjectType[]> {
-  const { data, error } = await getSupabase().from('object_types').select('*').order('name');
-  if (error) return [];
-  return data as ObjectType[];
+  return _objectTypes as unknown as ObjectType[];
 }
 
 export async function getArtistMovements(artistId: string): Promise<string[]> {
-  const { data } = await getSupabase().from('artist_movements').select('movement_id').eq('artist_id', artistId);
-  return data?.map(r => r.movement_id) || [];
+  return (_artistMovements as any[]).filter(r => r.artist_id === artistId).map(r => r.movement_id);
 }
 
 export async function getMovementArtists(movementId: string): Promise<string[]> {
-  const { data } = await getSupabase().from('artist_movements').select('artist_id').eq('movement_id', movementId);
-  return data?.map(r => r.artist_id) || [];
+  return (_artistMovements as any[]).filter(r => r.movement_id === movementId).map(r => r.artist_id);
 }
 
 export async function getSiteSettings(): Promise<Record<string, string>> {
-  const { data, error } = await getSupabase().from('site_settings').select('*');
-  if (error) { console.error('[Art] Settings error:', error.message); return {}; }
-  const s: Record<string, string> = {};
-  data?.forEach((r: { key: string; value: string }) => { s[r.key] = r.value; });
-  return s;
+  return _siteSettings;
 }
 
-// Nexus
+// =============================================================================
+// NEXUS (STILL USES SUPABASE — UNCHANGED)
+// =============================================================================
+
 export interface NexusSite {
   site_id: string; site_name: string; site_url: string;
   legal_entity: string; contact_email: string;
