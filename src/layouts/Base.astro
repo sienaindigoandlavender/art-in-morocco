@@ -191,7 +191,7 @@ const SITE = 'https://moroccoartguide.com';
           ))}
         </div>
         <span class="copyright">© {new Date().getFullYear()} {nexusSite?.site_name || 'Morocco Art Guide'}</span>
-        <a href="https://www.slowmorocco.com" target="_blank" rel="noopener" class="powered-by">Powered by Slow Morocco</a>
+        <span class="powered-by">A <a href="https://www.slowmorocco.com" target="_blank" rel="noopener">Slow Morocco</a> project / Powered by <a href="https://www.dancingwiththelions.com" target="_blank" rel="noopener">Dancing with Lions</a></span>
       </div>
     </div>
   </footer>
@@ -342,7 +342,7 @@ const SITE = 'https://moroccoartguide.com';
   /* Level 1 — site links */
   .footer-l1 {
     background: #1f1f1f;
-    padding: var(--space-md) 0;
+    padding: 1.25rem 0;
     border-bottom: 1px solid rgba(255,255,255,0.06);
   }
 
@@ -350,6 +350,7 @@ const SITE = 'https://moroccoartguide.com';
     display: flex;
     gap: 2rem;
     justify-content: center;
+    align-items: center;
   }
 
   .footer-site-links a {
@@ -357,7 +358,7 @@ const SITE = 'https://moroccoartguide.com';
     font-weight: 400;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: rgba(255,255,255,0.5);
+    color: rgba(255,255,255,0.9);
     transition: color 0.2s;
   }
 
@@ -396,7 +397,7 @@ const SITE = 'https://moroccoartguide.com';
     font-weight: 600;
     letter-spacing: 0.14em;
     text-transform: uppercase;
-    color: rgba(255,255,255,0.3);
+    color: rgba(255,255,255,0.5);
     margin-bottom: 0.8rem;
   }
 
@@ -426,25 +427,29 @@ const SITE = 'https://moroccoartguide.com';
     gap: 0.5rem;
   }
 
-  .legal-links { display: flex; gap: 1.5rem; }
+  .legal-links { display: flex; align-items: center; gap: 1.5rem; }
 
   .legal-links a {
     font-size: 0.65rem;
-    color: rgba(255,255,255,0.3);
+    color: rgba(255,255,255,0.85);
     transition: color 0.2s;
   }
 
-  .legal-links a:hover { color: rgba(255,255,255,0.6); }
+  .legal-links a:hover { color: rgba(255,255,255,1); }
 
-  .copyright { font-size: 0.65rem; color: rgba(255,255,255,0.2); }
+  .copyright { font-size: 0.65rem; color: rgba(255,255,255,0.7); }
 
   .powered-by {
     font-size: 0.65rem;
-    color: rgba(255,255,255,0.25);
+    color: rgba(255,255,255,0.7);
     transition: color 0.2s;
   }
-
-  .powered-by:hover { color: rgba(255,255,255,0.5); }
+  .powered-by a {
+    color: rgba(255,255,255,0.9);
+    transition: color 0.2s;
+    font-size: inherit;
+  }
+  .powered-by a:hover { color: rgba(255,255,255,1); }
 
   /* ═══════════════════════════════════════════════════════════════════════════
      SHARED PAGE STYLES
